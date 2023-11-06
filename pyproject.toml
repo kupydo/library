@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "kupydo"
+version = "0.1.0"
+description = "Python Library for Simplified Application Deployments"
+authors = ["Mattias Aabmets <mattias.aabmets@gmail.com>"]
+repository = "https://github.com/kupydo/library"
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = '*', from = 'src' }
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+kubernetes-asyncio = "^28.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+pytest-cov = "^4.1.0"
+coverage = "^7.3.2"
+devtools-cli = "^0.12.0"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+console_output_style = "count"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests"]
+addopts = [
+    "--cov=src",
+    "--cov-report=html",
+    "--no-cov-on-fail",
+    "--import-mode=append"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/*"]
+
+[tool.coverage.report]
+fail_under = 90
+skip_empty = true
+ignore_errors = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@abstractmethod"
+]
+
+[tool.coverage.html]
+directory = ".htmlcov"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

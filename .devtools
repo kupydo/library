@@ -1,0 +1,29 @@
+{
+  "license_cmd": {
+    "header": {
+      "title": "MIT License",
+      "year": "2023",
+      "holder": "Mattias Aabmets",
+      "spdx_id": "MIT",
+      "spaces": 3,
+      "oss": true
+    },
+    "paths": [
+      "src",
+      "tests"
+    ],
+    "file_name": "mit.json"
+  },
+  "version_cmd": {
+    "app_version": "0.1.0",
+    "components": [
+      {
+        "name": "source",
+        "target": "src",
+        "ignore": [],
+        "hash": "786a02f742015903c6c6fd852552d272"
+      }
+    ],
+    "only_config": false
+  }
+}
