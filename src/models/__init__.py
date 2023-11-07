@@ -8,3 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from .namespace import Namespace
+from .deployment import Deployment
+from .configmap import ConfigMap
+from .secret import Secret

@@ -11,6 +11,7 @@
 import orjson
 from dataclasses import dataclass
 from kubernetes_asyncio.client.exceptions import ApiException
+from typing import Generic, TypeVar
 
 
 @dataclass
@@ -21,12 +22,15 @@ class ErrorDetails:
     details: dict
 
 
-class Response:
+AnyModel = TypeVar("AnyModel")
+
+
+class Response(Generic[AnyModel]):
     code: int
-    contents: dict | None
+    contents: AnyModel | None
     error: ErrorDetails | orjson.JSONDecodeError | None
 
-    def __init__(self, contents: dict = None, error: ApiException = None) -> None:
+    def __init__(self, contents: AnyModel = None, error: ApiException = None) -> None:
         self.contents = contents
         if not error:
             self.code = 200

@@ -22,7 +22,6 @@ __all__ = ["Namespace"]
 
 
 class Namespace(AbstractKubeModel):
-    RawModel = client.V1Namespace
     Deployment: Type[Deployment] = Deployment
 
     @validate_call
