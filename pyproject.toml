@@ -12,6 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
+orjson = "^3.9.10"
 kubernetes-asyncio = "^28.2.0"
 
 [tool.poetry.group.dev.dependencies]
