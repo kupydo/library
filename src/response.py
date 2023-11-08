@@ -9,9 +9,10 @@
 #   SPDX-License-Identifier: MIT
 #
 import orjson
+from typing import Generic
 from dataclasses import dataclass
-from kubernetes_asyncio.client.exceptions import ApiException
-from typing import Generic, TypeVar
+from kubernetes_asyncio import client
+from src.generics import KupydoModel, AnyRawModel
 
 
 @dataclass
@@ -22,16 +23,14 @@ class ErrorDetails:
     details: dict
 
 
-AnyModel = TypeVar("AnyModel")
-
-
-class Response(Generic[AnyModel]):
+@dataclass
+class Response(Generic[KupydoModel]):
     code: int
-    contents: AnyModel | None
+    raw: AnyRawModel | None
     error: ErrorDetails | orjson.JSONDecodeError | None
 
-    def __init__(self, contents: AnyModel = None, error: ApiException = None) -> None:
-        self.contents = contents
+    def __init__(self, model: AnyRawModel = None, error: client.ApiException = None) -> None:
+        self.model = model
         if not error:
             self.code = 200
             self.error = None

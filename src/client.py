@@ -10,8 +10,8 @@
 #
 from typing import Callable
 from kubernetes_asyncio import client
-from typehints import KubeModel
-from response import Response
+from src.generics import KupydoModel
+from src.response import Response
 
 
 class ApiClient:
@@ -23,20 +23,33 @@ class ApiClient:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.__client__.close()
-        self.__client__ = None
 
-    async def _request(self, coro: Callable) -> Response:
-        try:
-            resp = await coro(self.__client__)
-            return Response(contents=resp)
-        except client.ApiException as ex:
-            return Response(error=ex)
+    @staticmethod
+    def query_handler(async_method: Callable) -> Callable:
+        async def closure(model: KupydoModel) -> Response[KupydoModel]:
+            try:
+                resp = await async_method(model)
+                return Response(model=resp)
+            except client.ApiException as ex:
+                return Response(error=ex)
+        return closure
 
-    async def create(self, model: KubeModel) -> Response:
-        return await self._request(model.create)
+    @query_handler
+    async def create(self, model: KupydoModel) -> Response[KupydoModel]:
+        return await model.create(self.__client__)
 
-    async def delete(self, model: KubeModel) -> Response:
-        return await self._request(model.delete)
+    @query_handler
+    async def delete(self, model: KupydoModel) -> Response[KupydoModel]:
+        return await model.delete(self.__client__)
 
-    async def read(self, model: KubeModel) -> Response:
-        return await self._request(model.read)
+    @query_handler
+    async def patch(self, model: KupydoModel) -> Response[KupydoModel]:
+        return await model.patch(self.__client__)
+
+    @query_handler
+    async def read(self, model: KupydoModel) -> Response[KupydoModel]:
+        return await model.read(self.__client__)
+
+    @query_handler
+    async def replace(self, model: KupydoModel) -> Response[KupydoModel]:
+        return await model.replace(self.__client__)

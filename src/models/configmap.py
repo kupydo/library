@@ -8,39 +8,44 @@
 #   
 #   SPDX-License-Identifier: MIT
 #
-from models.abstract import AbstractKubeModel
+from typing import Type
+from src.base import KupydoBaseModel
 from kubernetes_asyncio import client
+from src.registry import Registry
 
 
-class ConfigMap:
-    pass
+class ConfigMap(KupydoBaseModel):
 
-# class ConfigMap:
-#
-#     def __init__(
-#             self,
-#             name: str = None,
-#             data: dict[str, str] = None,
-#             labels: dict[str, str] = None,
-#             annotations: dict[str, str] = None,
-#             immutable: bool = False,
-#             **kwargs: dict[str, str]
-#     ) -> None:
-#         pass
-#         # if data is None:
-#         #     data = dict()
-#         # data.update(**kwargs)
-#         #
-#         # client.V1ConfigMap(
-#         #     api_version="v1",
-#         #     kind="ConfigMap",
-#         #     immutable=immutable,
-#         #     metadata=client.V1ObjectMeta(
-#         #         name=name or generate_name(),
-#         #         labels=labels,
-#         #         annotations=annotations,
-#         #         namespace=
-#         #     ),
-#         #     data=data
-#         # )
-#
+    def __init__(
+            self,
+            name: str,
+            labels: dict[str, str] = None,
+            annotations: dict[str, str] = None,
+            data: dict[str, str] = None,
+            **kwargs
+    ) -> None:
+        reg = Registry()
+        reg.append(self)
+
+    @property
+    def raw_api(self) -> Type[client.CoreV1Api]:
+        return client.CoreV1Api
+
+    @property
+    def raw_model(self) -> Type[client.V1ConfigMap]:
+        return client.V1ConfigMap
+
+    async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
+        return await self.raw_api(session).create_namespaced_config_map()
+
+    async def delete(self, session: client.ApiClient) -> client.V1Status:
+        return await self.raw_api(session).delete_namespaced_config_map()
+
+    async def patch(self, session: client.ApiClient) -> client.V1ConfigMap:
+        return await self.raw_api(session).patch_namespaced_config_map()
+
+    async def read(self, session: client.ApiClient) -> client.V1ConfigMap:
+        return await self.raw_api(session).read_namespaced_config_map()
+
+    async def replace(self, session: client.ApiClient) -> client.V1ConfigMap:
+        return await self.raw_api(session).replace_namespaced_config_map()

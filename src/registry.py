@@ -8,9 +8,13 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from typing import Optional, TypeVar
-from models.abstract import AbstractKubeModel
+from __future__ import annotations
 
 
-MetaDict = Optional[dict[str, str]]
-KubeModel = TypeVar('KubeModel', bound=AbstractKubeModel)
+class Registry(list):
+    __instance__: Registry | None = None
+
+    def __new__(cls) -> Registry:
+        if cls.__instance__ is None:
+            cls.__instance__ = super().__new__(cls)
+        return cls.__instance__
