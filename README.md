@@ -1,2 +1,2 @@
 # library
-Python Library for Simplified Application Deployments
+Python Library for Simplified Kubernetes Operations
