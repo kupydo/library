@@ -8,3 +8,7 @@
 #   
 #   SPDX-License-Identifier: MIT
 #
+
+
+class Deployment:
+    pass

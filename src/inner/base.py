@@ -8,16 +8,22 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from typing import Any
 from abc import ABC, abstractmethod
+from typing import Any
+from pydantic import BaseModel
 from kubernetes_asyncio import client
-from src.generics import AnyRawModel, AnyRawApi
+from .types import *
 
 
 __all__ = ["KupydoBaseModel"]
 
 
-class KupydoBaseModel(ABC):
+class KupydoBaseModel(BaseModel, ABC):
+    name: str
+    namespace: str = None
+    annotations: OptDict = None
+    labels: OptDict = None
+
     @property
     @abstractmethod
     def raw_api(self) -> AnyRawApi: ...

@@ -12,10 +12,9 @@ from typing import Any, Type
 from pydantic import validate_call
 from kubernetes_asyncio import client
 
+from models.values import BaseValues
 from models.deployment import Deployment
-from models.values.metadata import MetadataValues
-from models.abstract import AbstractKubeModel
-from typehints import MetaDict
+from abstract import AbstractKubeModel
 
 
 __all__ = ["Namespace"]
@@ -28,11 +27,11 @@ class Namespace(AbstractKubeModel):
     def __init__(
             self, *,
             name: str,
-            labels: MetaDict = None,
-            annotations: MetaDict = None
+            labels: dict[str, str] = None,
+            annotations: dict[str, str] = None
     ) -> None:
         self.__resources__ = list()
-        self.__values__ = MetadataValues(
+        self.__values__ = BaseValues(
             name=name,
             labels=labels,
             annotations=annotations
@@ -43,6 +42,7 @@ class Namespace(AbstractKubeModel):
             def inner(*args, **kwargs) -> object:
                 obj3 = obj2(*args, **kwargs)
                 setattr(obj3, "__namespace__", self.name)
+                self.__resources__.append(obj3)
                 return obj3
             return inner
 
@@ -52,11 +52,11 @@ class Namespace(AbstractKubeModel):
         return super().__getattribute__(item)
 
     @property
-    def values(self) -> MetadataValues:
+    def values(self) -> BaseValues:
         return self.__values__
 
     @values.setter
-    def values(self, values: MetadataValues) -> None:
+    def values(self, values: BaseValues) -> None:
         self.__values__ = values
 
     @property

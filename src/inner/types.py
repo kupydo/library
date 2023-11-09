@@ -8,18 +8,14 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from typing import TypeVar
+from typing import TypeVar, Optional
 from kubernetes_asyncio import client
-from src.base import KupydoBaseModel
 
 
-__all__ = ["KupydoModel", "AnyRawApi", "AnyRawModel"]
+__all__ = ["OptDict", "AnyRawApi", "AnyRawModel"]
 
 
-KupydoModel = TypeVar(
-    name='KupydoModel',
-    bound=KupydoBaseModel
-)
+OptDict = Optional[dict[str, str]]
 AnyRawApi = TypeVar(
     'AnyRawApi',
     client.AppsV1Api,

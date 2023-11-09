@@ -8,9 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from models.abstract import AbstractKubeModel
-from kubernetes_asyncio import client
 
 
-class Secret:
+class Loader:
     pass

@@ -9,9 +9,9 @@
 #   SPDX-License-Identifier: MIT
 #
 from typing import Type
-from src.base import KupydoBaseModel
 from kubernetes_asyncio import client
-from src.registry import Registry
+from src.inner.registry import Registry
+from src.inner.base import KupydoBaseModel
 
 
 class ConfigMap(KupydoBaseModel):
