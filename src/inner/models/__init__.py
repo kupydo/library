@@ -8,7 +8,5 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-
-
-class Loader:
-    pass
+from .cluster_wide import *
+from namespaced import *

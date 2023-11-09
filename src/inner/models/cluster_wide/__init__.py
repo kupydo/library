@@ -8,3 +8,4 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from .namespace import Namespace

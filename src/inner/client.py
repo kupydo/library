@@ -13,7 +13,7 @@ from typing import Generic, TypeVar, Callable
 from dataclasses import dataclass
 from kubernetes_asyncio import client
 from .base import KupydoBaseModel
-from .types import AnyRawModel
+from .types import RawModel
 
 
 T = TypeVar('T', bound=KupydoBaseModel)
@@ -30,10 +30,10 @@ class ErrorDetails:
 @dataclass
 class Response(Generic[T]):
     code: int
-    raw: AnyRawModel | None
+    raw: RawModel | None
     error: ErrorDetails | orjson.JSONDecodeError | None
 
-    def __init__(self, model: AnyRawModel = None, error: client.ApiException = None) -> None:
+    def __init__(self, model: RawModel = None, error: client.ApiException = None) -> None:
         self.model = model
         if not error:
             self.code = 200
@@ -67,9 +67,9 @@ class ApiClient:
         async def closure(model: T) -> Response[T]:
             try:
                 resp = await async_method(model)
-                return Response(model=resp)
+                return Response[T](model=resp)
             except client.ApiException as ex:
-                return Response(error=ex)
+                return Response[T](error=ex)
         return closure
 
     @query_handler

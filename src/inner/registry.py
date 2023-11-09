@@ -9,12 +9,24 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
+from dotmap import DotMap
+from src.inner.base import KupydoBaseModel
 
 
-class Registry(list):
-    __instance__: Registry | None = None
+class GlobalRegistry:
+    __private__: {
+        "namespace": str
+    }
+    __namespace__: str | None = None
+    __instance__: GlobalRegistry | None = None
+    __items__: list[KupydoBaseModel] | None = None
 
-    def __new__(cls) -> Registry:
+    @classmethod
+    def __new__(cls, *_) -> GlobalRegistry:
         if cls.__instance__ is None:
             cls.__instance__ = super().__new__(cls)
+            cls.__instance__.__namespace__ = None
         return cls.__instance__
+
+    def register(self, model: KupydoBaseModel, *, with_namespace: bool) -> None:
+        pass

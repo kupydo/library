@@ -8,26 +8,30 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from typing import TypeVar, Optional
+from pydantic import Field
+from typing import TypeVar, Type, Annotated, Union
 from kubernetes_asyncio import client
 
 
-__all__ = ["OptDict", "AnyRawApi", "AnyRawModel"]
+__all__ = ["DataTypes", "UnionDict", "StringDict", "ApiType", "RawModel"]
 
 
-OptDict = Optional[dict[str, str]]
-AnyRawApi = TypeVar(
-    'AnyRawApi',
-    client.AppsV1Api,
-    client.AutoscalingV1Api,
-    client.CoreV1Api,
-    client.BatchV1Api,
-    client.NetworkingV1Api,
-    client.RbacAuthorizationV1Api,
-    client.PolicyV1Api
+DataTypes = Union[str, int, float, dict, list]
+UnionDict = Annotated[dict[str, DataTypes], Field(default=None)]
+StringDict = Annotated[dict[str, str], Field(default=None)]
+
+ApiType = TypeVar(
+    'ApiType',
+    Type[client.AppsV1Api],
+    Type[client.AutoscalingV1Api],
+    Type[client.CoreV1Api],
+    Type[client.BatchV1Api],
+    Type[client.NetworkingV1Api],
+    Type[client.RbacAuthorizationV1Api],
+    Type[client.PolicyV1Api]
 )
-AnyRawModel = TypeVar(
-    'AnyRawModel',
+RawModel = TypeVar(
+    'RawModel',
     client.V1ConfigMap,
     client.V1CronJob,
     client.V1Deployment,
