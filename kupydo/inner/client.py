@@ -9,74 +9,15 @@
 #   SPDX-License-Identifier: MIT
 #
 import orjson
-from rich import print
-from rich.panel import Panel
-from dataclasses import dataclass
 from kubernetes_asyncio import client
-from typing import Generic, Callable, Any
-from .base import KupydoModel
-from .types import RawModel
-from .utils import pathutils
+from rich.panel import Panel
+from rich import print
+from typing import Callable
+from .response import Response
+from .base import KupydoModel, KupydoFields
 
 
-__all__ = ["ErrorDetails", "Response", "ApiClient"]
-
-
-@dataclass
-class ErrorDetails:
-    status: str
-    reason: str
-    message: str
-    details: dict[str, Any]
-
-
-@dataclass
-class Response(Generic[KupydoModel]):
-    code: int
-    model: RawModel | None
-    error: ErrorDetails | str | None
-
-    def __init__(self, model: RawModel = None, error: client.ApiException | Exception = None) -> None:
-        self.model = model
-        self.error = error
-
-        if error is None:
-            self.code = 200
-        elif isinstance(error, client.ApiException):
-            self.code = int(error.status)
-            try:
-                body = orjson.loads(error.body)
-                self.error = ErrorDetails(
-                    status=body.get("status", ""),
-                    reason=body.get("reason", ""),
-                    message=body.get("message", ""),
-                    details=body.get("details", {})
-                )
-            except orjson.JSONDecodeError as ex:
-                self.error = ErrorDetails(
-                    status="InvalidResponse",
-                    reason="JSONDecodeError",
-                    message=ex.msg,
-                    details=dict(
-                        pos=ex.pos,
-                        colno=ex.colno,
-                        lineno=ex.lineno,
-                        doc=ex.doc
-                    )
-                )
-        else:  # Exception
-            tb = error.__traceback__
-            self.code = 600
-            self.error = ErrorDetails(
-                status="KupydoError",
-                reason=error.__class__.__name__,
-                message=str(error),
-                details=dict(
-                    filename=pathutils.extract_tb_filepath(tb),
-                    instruction=pathutils.extract_tb_line(tb),
-                    lineno=tb.tb_lineno
-                )
-            )
+__all__ = ["ApiClient"]
 
 
 class ApiClient:
@@ -127,11 +68,11 @@ class ApiClient:
         return await model.delete(self.__client__)
 
     @error_handler
-    async def patch(self, model: KupydoModel) -> Response[KupydoModel]:
+    async def patch(self, model: KupydoModel, fields: KupydoFields) -> Response[KupydoModel]:
         """
         :raises None:
         """
-        return await model.patch(self.__client__)
+        return await model.patch(self.__client__, fields)
 
     @error_handler
     async def read(self, model: KupydoModel) -> Response[KupydoModel]:
