@@ -33,15 +33,15 @@ class ErrorDetails:
 @dataclass
 class Response(Generic[KupydoModel]):
     code: int
-    raw: RawModel | None
+    model: RawModel | None
     error: ErrorDetails | str | None
 
     def __init__(self, model: RawModel = None, error: client.ApiException | Exception = None) -> None:
         self.model = model
+        self.error = error
+
         if error is None:
-            self.error = None
             self.code = 200
-            return
         elif isinstance(error, client.ApiException):
             self.code = int(error.status)
             try:
@@ -64,20 +64,19 @@ class Response(Generic[KupydoModel]):
                         doc=ex.doc
                     )
                 )
-            return
-        # error is an Exception
-        tb = error.__traceback__
-        self.code = 600
-        self.error = ErrorDetails(
-            status="KupydoError",
-            reason=error.__class__.__name__,
-            message=str(error),
-            details=dict(
-                filename=pathutils.extract_tb_filepath(tb),
-                instruction=pathutils.extract_tb_line(tb),
-                lineno=tb.tb_lineno
+        else:  # Exception
+            tb = error.__traceback__
+            self.code = 600
+            self.error = ErrorDetails(
+                status="KupydoError",
+                reason=error.__class__.__name__,
+                message=str(error),
+                details=dict(
+                    filename=pathutils.extract_tb_filepath(tb),
+                    instruction=pathutils.extract_tb_line(tb),
+                    lineno=tb.tb_lineno
+                )
             )
-        )
 
 
 class ApiClient:
