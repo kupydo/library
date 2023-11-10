@@ -8,26 +8,27 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from abc import ABC, abstractmethod
-from typing import Any, TypeVar
-from pydantic import BaseModel
+from __future__ import annotations
 from kubernetes_asyncio import client
+from pydantic import BaseModel
+from typing import Any, TypeVar
+from abc import ABC, abstractmethod
 from .types import *
 
 
 __all__ = [
-    "KupydoBaseValues", "KupydoValues",
+    "KupydoBaseFields", "KupydoFields",
     "KupydoBaseModel", "KupydoModel"
 ]
 
 
-class KupydoBaseValues(BaseModel):
+class KupydoBaseFields(BaseModel):
     name: str
     labels: StringDict
     annotations: StringDict
 
 
-KupydoValues = TypeVar('KupydoValues', bound=KupydoBaseValues)
+KupydoFields = TypeVar('KupydoFields', bound=KupydoBaseFields)
 
 
 class KupydoBaseModel(ABC):
@@ -41,7 +42,7 @@ class KupydoBaseModel(ABC):
 
     @property
     @abstractmethod
-    def values(self) -> KupydoBaseValues: ...
+    def values(self) -> KupydoBaseFields: ...
 
     @abstractmethod
     async def create(self, session: client.ApiClient) -> Any: ...
@@ -56,7 +57,7 @@ class KupydoBaseModel(ABC):
     async def read(self, session: client.ApiClient) -> Any: ...
 
     @abstractmethod
-    async def replace(self, session: client.ApiClient) -> Any: ...
+    async def replace(self, session: client.ApiClient, new_model: KupydoBaseModel) -> Any: ...
 
 
 KupydoModel = TypeVar('KupydoModel', bound=KupydoBaseModel)

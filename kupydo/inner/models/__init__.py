@@ -9,4 +9,4 @@
 #   SPDX-License-Identifier: MIT
 #
 from .cluster_wide import *
-from namespaced import *
+from .namespaced import *

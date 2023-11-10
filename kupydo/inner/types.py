@@ -9,11 +9,11 @@
 #   SPDX-License-Identifier: MIT
 #
 from pydantic import Field
-from typing import TypeVar, Type, Annotated, Union
 from kubernetes_asyncio import client
+from typing import Annotated, TypeVar, Type, Union
 
 
-__all__ = ["DataTypes", "UnionDict", "StringDict", "ApiType", "RawModel"]
+__all__ = ["UnionDict", "StringDict", "ApiType", "RawModel"]
 
 
 DataTypes = Union[str, int, float, dict, list]
