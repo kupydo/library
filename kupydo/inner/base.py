@@ -13,22 +13,22 @@ from kubernetes_asyncio import client
 from pydantic import BaseModel
 from typing import Any, TypeVar
 from abc import ABC, abstractmethod
-from .types import *
+from .types import ApiType, StringDict
 
 
 __all__ = [
-    "KupydoBaseFields", "KupydoFields",
+    "KupydoBaseValues", "KupydoValues",
     "KupydoBaseModel", "KupydoModel"
 ]
 
 
-class KupydoBaseFields(BaseModel):
+class KupydoBaseValues(BaseModel):
     name: str
     labels: StringDict
     annotations: StringDict
 
 
-KupydoFields = TypeVar('KupydoFields', bound=KupydoBaseFields)
+KupydoValues = TypeVar('KupydoValues', bound=KupydoBaseValues)
 
 
 class KupydoBaseModel(ABC):
@@ -37,15 +37,10 @@ class KupydoBaseModel(ABC):
 
     @property
     @abstractmethod
-    def raw(self) -> RawModel: ...
+    def __api__(self) -> ApiType: ...
 
-    @property
     @abstractmethod
-    def api(self) -> ApiType: ...
-
-    @property
-    @abstractmethod
-    def values(self) -> KupydoBaseFields: ...
+    def to_dict(self, new_values: KupydoBaseValues) -> dict | None: ...
 
     @abstractmethod
     async def create(self, session: client.ApiClient) -> Any: ...
@@ -54,13 +49,13 @@ class KupydoBaseModel(ABC):
     async def delete(self, session: client.ApiClient) -> Any: ...
 
     @abstractmethod
-    async def patch(self, session: client.ApiClient, fields: KupydoFields) -> Any: ...
-
-    @abstractmethod
     async def read(self, session: client.ApiClient) -> Any: ...
 
     @abstractmethod
     async def replace(self, session: client.ApiClient, new_model: KupydoBaseModel) -> Any: ...
+
+    @abstractmethod
+    async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> Any: ...
 
 
 KupydoModel = TypeVar('KupydoModel', bound=KupydoBaseModel)

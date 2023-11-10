@@ -14,7 +14,7 @@ from rich.panel import Panel
 from rich import print
 from typing import Callable
 from .response import Response
-from .base import KupydoModel, KupydoFields
+from .base import KupydoModel
 
 
 __all__ = ["ApiClient"]
@@ -68,13 +68,6 @@ class ApiClient:
         return await model.delete(self.__client__)
 
     @error_handler
-    async def patch(self, model: KupydoModel, fields: KupydoFields) -> Response[KupydoModel]:
-        """
-        :raises None:
-        """
-        return await model.patch(self.__client__, fields)
-
-    @error_handler
     async def read(self, model: KupydoModel) -> Response[KupydoModel]:
         """
         :raises None:
@@ -87,3 +80,10 @@ class ApiClient:
         :raises None:
         """
         return await model.replace(self.__client__, new_model)
+
+    @error_handler
+    async def patch(self, model: KupydoModel, **kwargs) -> Response[KupydoModel]:
+        """
+        :raises None:
+        """
+        return await model.patch(self.__client__, kwargs)

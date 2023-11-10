@@ -18,15 +18,14 @@ class GlobalRegistry:
     __namespace__: str
 
     @classmethod
-    def __new__(cls, *, namespace: str) -> GlobalRegistry:
+    def __new__(cls) -> GlobalRegistry:
         if cls.__instance__ is None:
             obj = super().__new__(cls)
-            obj.__namespace__ = namespace
             obj.__entries__ = list()
             cls.__instance__ = obj
         return cls.__instance__
 
-    def append(self, item: KupydoBaseModel) -> None:
+    def insert(self, item: KupydoBaseModel) -> None:
         self.__entries__.append(item)
 
     @property
