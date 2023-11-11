@@ -35,7 +35,7 @@ class GlobalRegistry:
     _unpacked_resources: list[UnpackedResource] = list()
     _enabled: bool = True
 
-    def __new__(cls, namespace: str = 'default') -> LocalRegistry:
+    def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
         """
         :raises DisabledRegistryError:
         """

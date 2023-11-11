@@ -8,82 +8,66 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-import orjson
-from kubernetes_asyncio import client
-from rich.panel import Panel
-from rich import print
-from typing import Callable
-from .response import Response
-from .base import KupydoModel
+from kubernetes_asyncio import client, config
+from .response import Response, error_handler
+from .base import KupydoBaseModel
+from .types import RawModel
 
 
 __all__ = ["ApiClient"]
 
 
 class ApiClient:
-    def __init__(self):
-        self.__client__ = client.ApiClient()
+    def __init__(self, *, autoconfig: bool = False):
+        self._autoconfig = autoconfig
 
     async def __aenter__(self):
+        kubeconf = client.Configuration.get_default_copy()
+        if self._autoconfig and not kubeconf.host:
+            try:
+                config.load_incluster_config()
+            except config.ConfigException:
+                try:
+                    await config.load_kube_config()
+                except config.ConfigException:
+                    raise RuntimeError("Unable to automatically load Kubernetes config.")
+        self._client = client.ApiClient()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.__client__.close()
-
-    @staticmethod
-    def error_handler(async_method: Callable) -> Callable:
-        async def closure(model: KupydoModel) -> Response[KupydoModel]:
-            try:
-                resp = await async_method(model)
-                return Response(model=resp)
-            except (client.ApiException, Exception) as ex:
-                resp = Response(error=ex)
-                if True:
-                    err_str = orjson.dumps(
-                        dict(error=vars(resp.error)),
-                        option=orjson.OPT_INDENT_2
-                    )
-                    panel = Panel(
-                        renderable=err_str.decode("utf-8"),
-                        title="Response Error",
-                        title_align="center",
-                        expand=False
-                    )
-                    print(panel)
-                return resp
-        return closure
+        await self._client.close()
 
     @error_handler
-    async def create(self, model: KupydoModel) -> Response[KupydoModel]:
+    async def create(self, model: KupydoBaseModel) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.create(self.__client__)
+        return await model.create(self._client)
 
     @error_handler
-    async def delete(self, model: KupydoModel) -> Response[KupydoModel]:
+    async def delete(self, model: KupydoBaseModel) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.delete(self.__client__)
+        return await model.delete(self._client)
 
     @error_handler
-    async def read(self, model: KupydoModel) -> Response[KupydoModel]:
+    async def read(self, model: KupydoBaseModel) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.read(self.__client__)
+        return await model.read(self._client)
 
     @error_handler
-    async def replace(self, model: KupydoModel, new_model: KupydoModel) -> Response[KupydoModel]:
+    async def replace(self, model: KupydoBaseModel, *, new_model: KupydoBaseModel) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.replace(self.__client__, new_model)
+        return await model.replace(self._client, new_model)
 
     @error_handler
-    async def patch(self, model: KupydoModel, **kwargs) -> Response[KupydoModel]:
+    async def patch(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.patch(self.__client__, kwargs)
+        return await model.patch(self._client, kwargs)

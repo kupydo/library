@@ -9,3 +9,4 @@
 #   SPDX-License-Identifier: MIT
 #
 from kupydo.inner.registry import GlobalRegistry
+from kupydo.inner.client import ApiClient

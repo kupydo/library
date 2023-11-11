@@ -11,24 +11,18 @@
 from __future__ import annotations
 from kubernetes_asyncio import client
 from pydantic import BaseModel
-from typing import Any, TypeVar
+from typing import Any
 from abc import ABC, abstractmethod
 from .types import ApiType, StringDictAtd
 
 
-__all__ = [
-    "KupydoBaseValues", "KupydoValues",
-    "KupydoBaseModel", "KupydoModel"
-]
+__all__ = ["KupydoBaseValues", "KupydoBaseModel"]
 
 
 class KupydoBaseValues(BaseModel):
     name: str
     labels: StringDictAtd
     annotations: StringDictAtd
-
-
-KupydoValues = TypeVar('KupydoValues', bound=KupydoBaseValues)
 
 
 class KupydoBaseModel(ABC):
@@ -56,6 +50,3 @@ class KupydoBaseModel(ABC):
 
     @abstractmethod
     async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> Any: ...
-
-
-KupydoModel = TypeVar('KupydoModel', bound=KupydoBaseModel)

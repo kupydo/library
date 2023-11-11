@@ -9,15 +9,18 @@
 #   SPDX-License-Identifier: MIT
 #
 import orjson
-from kubernetes_asyncio import client
+from typing import Callable, Generic, Any
+from kubernetes_asyncio.client import ApiException
+from aiohttp.client import ClientError
 from dataclasses import dataclass
-from typing import Generic, Any
-from .base import KupydoModel
+from rich.panel import Panel
+from rich import print
+from .base import KupydoBaseModel
 from .types import RawModel
 from .utils import pathutils
 
 
-__all__ = ["ErrorDetails", "Response"]
+__all__ = ["ErrorDetails", "Response", "error_handler"]
 
 
 @dataclass
@@ -25,53 +28,75 @@ class ErrorDetails:
     status: str
     reason: str
     message: str
-    details: dict[str, Any]
+    details: dict[str, Any] = None
 
 
 @dataclass
-class Response(Generic[KupydoModel]):
+class Response(Generic[RawModel]):
     code: int
-    model: RawModel | None
-    error: ErrorDetails | str | None
+    raw: RawModel = None
+    error: ErrorDetails = None
 
-    def __init__(self, model: RawModel = None, error: client.ApiException | Exception = None) -> None:
-        self.model = model
-        self.error = error
 
-        if error is None:
-            self.code = 200
-        elif isinstance(error, client.ApiException):
-            self.code = int(error.status)
-            try:
-                body = orjson.loads(error.body)
-                self.error = ErrorDetails(
-                    status=body.get("status", ""),
-                    reason=body.get("reason", ""),
-                    message=body.get("message", ""),
-                    details=body.get("details", {})
+def error_handler(method: Callable) -> Callable:
+    async def closure(_self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
+        try:
+            raw = await method(_self, model, **kwargs)
+            return Response(code=200, raw=raw)
+        except (ApiException, ClientError, Exception) as error:
+            if isinstance(error, ApiException):
+                code = int(error.status)
+                try:
+                    body = orjson.loads(error.body)
+                    error = ErrorDetails(
+                        status=body.get("status", ""),
+                        reason=body.get("reason", ""),
+                        message=body.get("message", ""),
+                        details=body.get("details", None)
+                    )
+                except orjson.JSONDecodeError as ex:
+                    error = ErrorDetails(
+                        status="InvalidResponse",
+                        reason="JSONDecodeError",
+                        message=ex.msg,
+                        details=dict(
+                            pos=ex.pos,
+                            colno=ex.colno,
+                            lineno=ex.lineno,
+                            doc=ex.doc
+                        )
+                    )
+            elif isinstance(error, ClientError):
+                code = 400
+                error = ErrorDetails(
+                    status="AiohttpError",
+                    reason=error.__class__.__name__,
+                    message=str(error)
                 )
-            except orjson.JSONDecodeError as ex:
-                self.error = ErrorDetails(
-                    status="InvalidResponse",
-                    reason="JSONDecodeError",
-                    message=ex.msg,
+            else:  # Exception
+                tb = error.__traceback__
+                code = 600
+                error = ErrorDetails(
+                    status="KupydoError",
+                    reason=error.__class__.__name__,
+                    message=str(error),
                     details=dict(
-                        pos=ex.pos,
-                        colno=ex.colno,
-                        lineno=ex.lineno,
-                        doc=ex.doc
+                        filename=pathutils.extract_tb_filepath(tb),
+                        instruction=pathutils.extract_tb_line(tb),
+                        lineno=tb.tb_lineno
                     )
                 )
-        else:  # Exception
-            tb = error.__traceback__
-            self.code = 600
-            self.error = ErrorDetails(
-                status="KupydoError",
-                reason=error.__class__.__name__,
-                message=str(error),
-                details=dict(
-                    filename=pathutils.extract_tb_filepath(tb),
-                    instruction=pathutils.extract_tb_line(tb),
-                    lineno=tb.tb_lineno
+            if True:  # TODO: Conditional print on dev_mode = True
+                err_str = orjson.dumps(
+                    dict(error=vars(error)),
+                    option=orjson.OPT_INDENT_2
                 )
-            )
+                panel = Panel(
+                    renderable=err_str.decode("utf-8"),
+                    title="Response Error",
+                    title_align="center",
+                    expand=False
+                )
+                print(panel)
+            return Response(code=code, error=error)
+    return closure
