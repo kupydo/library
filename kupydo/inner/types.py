@@ -10,13 +10,13 @@
 #
 from pydantic import Field
 from kubernetes_asyncio import client
-from typing import Annotated, TypeVar, Type, Union
+from typing import Annotated, TypeVar, Type, Optional
 
 
 __all__ = ["StringDictAtd", "ApiType", "RawModel"]
 
 
-StringDictAtd = Annotated[dict[str, str], Field(default=None)]
+StringDictAtd = Annotated[Optional[dict[str, str]], Field(default=None)]
 
 ApiType = TypeVar(
     'ApiType',
