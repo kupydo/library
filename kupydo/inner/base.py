@@ -13,7 +13,7 @@ from kubernetes_asyncio import client
 from pydantic import BaseModel
 from typing import Any, TypeVar
 from abc import ABC, abstractmethod
-from .types import ApiType, StringDict
+from .types import ApiType, StringDictAtd
 
 
 __all__ = [
@@ -24,8 +24,8 @@ __all__ = [
 
 class KupydoBaseValues(BaseModel):
     name: str
-    labels: StringDict
-    annotations: StringDict
+    labels: StringDictAtd
+    annotations: StringDictAtd
 
 
 KupydoValues = TypeVar('KupydoValues', bound=KupydoBaseValues)
@@ -37,10 +37,10 @@ class KupydoBaseModel(ABC):
 
     @property
     @abstractmethod
-    def __api__(self) -> ApiType: ...
+    def _api(self) -> ApiType: ...
 
     @abstractmethod
-    def to_dict(self, new_values: KupydoBaseValues) -> dict | None: ...
+    def _to_dict(self, new_values: KupydoBaseValues) -> dict: ...
 
     @abstractmethod
     async def create(self, session: client.ApiClient) -> Any: ...
