@@ -8,8 +8,9 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from kubernetes_asyncio import client, config
+from kubernetes_asyncio import client
 from .response import Response, error_handler
+from .config import autoload_config
 from .base import KupydoBaseModel
 from .types import RawModel
 
@@ -18,19 +19,19 @@ __all__ = ["ApiClient"]
 
 
 class ApiClient:
-    def __init__(self, *, autoconfig: bool = False):
+    def __init__(self, *, autoconfig: bool = True) -> None:
+        """
+        :param autoconfig: When set to True, Kupydo will first try to load an
+            in-cluster config. If unsuccessful, it tries to load the current context
+            config. When set to False, the user is responsible for loading the correct
+            custom config using the `kupydo.config` module.
+        :raises RuntimeError: Only on `'async with'`, if Kupydo has not been configured.
+        """
         self._autoconfig = autoconfig
 
     async def __aenter__(self):
-        kubeconf = client.Configuration.get_default_copy()
-        if self._autoconfig and not kubeconf.host:
-            try:
-                config.load_incluster_config()
-            except config.ConfigException:
-                try:
-                    await config.load_kube_config()
-                except config.ConfigException:
-                    raise RuntimeError("Unable to automatically load Kubernetes config.")
+        if self._autoconfig:
+            await autoload_config()
         self._client = client.ApiClient()
         return self
 
