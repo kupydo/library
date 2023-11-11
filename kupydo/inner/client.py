@@ -60,11 +60,11 @@ class ApiClient:
         return await model.read(self._client)
 
     @error_handler
-    async def replace(self, model: KupydoBaseModel, *, new_model: KupydoBaseModel) -> Response[RawModel]:
+    async def replace(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
         """
         :raises None:
         """
-        return await model.replace(self._client, new_model)
+        return await model.replace(self._client, kwargs)
 
     @error_handler
     async def patch(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:

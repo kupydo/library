@@ -57,36 +57,39 @@ class ConfigMap(KupydoBaseModel):
                 annotations=values.annotations,
                 namespace=self._namespace
             ),
-            immutable=values.immutable,
+            immutable=values.immutable or False,
             data=values.data
         ).to_dict()
 
-    async def create(self, session: client.ApiClient, **_) -> client.V1ConfigMap:
+    async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).create_namespaced_config_map(
             namespace=self._namespace,
             body=self._to_dict()
         )
 
-    async def delete(self, session: client.ApiClient, **_) -> client.V1Status:
+    async def delete(self, session: client.ApiClient) -> client.V1Status:
         return await self._api(session).delete_namespaced_config_map(
             name=self._values.name,
             namespace=self._namespace
         )
 
-    async def read(self, session: client.ApiClient, **_) -> client.V1ConfigMap:
+    async def read(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).read_namespaced_config_map(
             name=self._values.name,
             namespace=self._namespace
         )
 
-    async def replace(self, session: client.ApiClient, new_model: ConfigMap, **_) -> client.V1ConfigMap:
+    async def replace(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
+        new_values = DotMap(kwargs)
+        new_values.name = self._values.name
+
         return await self._api(session).replace_namespaced_config_map(
             name=self._values.name,
             namespace=self._namespace,
-            body=new_model._to_dict()
+            body=self._to_dict(new_values)
         )
 
-    async def patch(self, session: client.ApiClient, kwargs: dict[str, Any], **_) -> client.V1ConfigMap:
+    async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
         new_values = self._values.copy()
         new_values.update(kwargs)
         new_values.name = self._values.name

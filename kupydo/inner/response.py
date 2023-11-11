@@ -13,6 +13,7 @@ from typing import Callable, Generic, Any
 from kubernetes_asyncio.client import ApiException
 from aiohttp.client import ClientError
 from dataclasses import dataclass
+from functools import partial
 from rich.panel import Panel
 from rich import print
 from .base import KupydoBaseModel
@@ -38,10 +39,11 @@ class Response(Generic[RawModel]):
     error: ErrorDetails = None
 
 
-def error_handler(method: Callable) -> Callable:
+def error_handler(coro: Callable) -> Callable:
     async def closure(_self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
         try:
-            raw = await method(_self, model, **kwargs)
+            c = partial(coro, _self, model)
+            raw = await c(**kwargs) if kwargs else await c()
             return Response(code=200, raw=raw)
         except (ApiException, ClientError, Exception) as error:
             if isinstance(error, ApiException):
@@ -73,7 +75,7 @@ def error_handler(method: Callable) -> Callable:
                     reason=error.__class__.__name__,
                     message=str(error)
                 )
-            else:  # Exception
+            else:  # Exception instance
                 tb = error.__traceback__
                 code = 600
                 error = ErrorDetails(
@@ -86,17 +88,17 @@ def error_handler(method: Callable) -> Callable:
                         lineno=tb.tb_lineno
                     )
                 )
-            if True:  # TODO: Conditional print on dev_mode = True
-                err_str = orjson.dumps(
-                    dict(error=vars(error)),
-                    option=orjson.OPT_INDENT_2
-                )
-                panel = Panel(
-                    renderable=err_str.decode("utf-8"),
-                    title="Response Error",
-                    title_align="center",
-                    expand=False
-                )
-                print(panel)
+            # Always log errors
+            err_str = orjson.dumps(
+                dict(error=vars(error)),
+                option=orjson.OPT_INDENT_2
+            )
+            panel = Panel(
+                renderable=err_str.decode("utf-8"),
+                title="Response Error",
+                title_align="center",
+                expand=False
+            )
+            print(panel)
             return Response(code=code, error=error)
     return closure
