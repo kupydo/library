@@ -9,95 +9,43 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from threading import Lock
 from pathlib import Path
-from dotmap import DotMap
-from typing import Type, Any
-from .base import KupydoBaseModel
+from typing import Any
 
 
-__all__ = [
-    "UnpackedResource",
-    "DisabledRegistryError",
-    "GlobalRegistry",
-    "LocalRegistry"
-]
-
-UnpackedResource = tuple[Type[KupydoBaseModel], dict[str, Any]]
+__all__ = ["GlobalRegistry", "LocalRegistry"]
 
 
-class DisabledRegistryError(Exception):
-    def __init__(self):
-        super().__init__("Cannot use GlobalRegistry when it has been disabled.")
+_Entry = tuple[type, dict[str, Any]]
+_Registry = dict[str, _Entry]
 
 
 class GlobalRegistry:
-    _unpacked_resources: list[UnpackedResource] = list()
-    _enabled: bool = True
+    _registry: _Registry = dict()
 
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
-        """
-        :raises DisabledRegistryError:
-        """
-        if not cls._enabled:
-            raise DisabledRegistryError
-        return LocalRegistry(cls._unpacked_resources, namespace)
+        return LocalRegistry(cls._registry, namespace)
 
     @classmethod
-    def enable(cls) -> None:
-        """
-        :raises None:
-        """
-        cls._enabled = True
-
-    @classmethod
-    def disable(cls) -> None:
-        """
-        :raises None:
-        """
-        cls._enabled = False
-
-    @classmethod
-    def insert(cls, item: UnpackedResource) -> None:
-        """
-        :raises None:
-        """
-        if cls._enabled:
-            cls._unpacked_resources.append(item)
+    def insert(cls, name: str, model: type, values: dict[str, Any]) -> None:
+        cls._registry[name] = (model, values)
 
     @classmethod
     def clear(cls) -> None:
-        """
-        :raises None:
-        """
-        if cls._enabled:
-            cls._unpacked_resources = list()
+        cls._registry = dict()
+
+    @classmethod
+    def pop(cls, key: str) -> None:
+        return cls._registry.pop(key, None)
 
     @classmethod
     def load_resources(cls, path: Path) -> None:
-        """
-        :raises DisabledRegistryError:
-        """
-        if not cls._enabled:
-            raise DisabledRegistryError
         cls.clear()
         #  TODO: import modules with importlib
 
 
-class LocalRegistry(list[KupydoBaseModel]):
-    _lock = Lock()  # class-level lock
-
-    def __init__(self, unpacked_resources: list[UnpackedResource], namespace: str) -> None:
-        def init_override(_self, _values):
-            _self._namespace = namespace
-            _self._values = _values
-
-        resources = list()
-        with LocalRegistry._lock:
-            for model_class, model_values in unpacked_resources:
-                default_init = model_class.__init__
-                model_class.__init__ = init_override
-                resource = model_class(DotMap(model_values))
-                model_class.__init__ = default_init
-                resources.append(resource)
-        super().__init__(resources)
+class LocalRegistry(dict):
+    def __init__(self, registry: _Registry, namespace: str) -> None:
+        for name, [model, values] in registry.items():
+            self[name] = model(values, namespace)
+        super().__init__()

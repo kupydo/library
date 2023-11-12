@@ -21,11 +21,13 @@ __all__ = ["ApiClient"]
 class ApiClient:
     def __init__(self, *, autoconfig: bool = True) -> None:
         """
-        :param autoconfig: When set to True, Kupydo will first try to load an
-            in-cluster config. If unsuccessful, it tries to load the current context
-            config. When set to False, the user is responsible for loading the correct
-            custom config using the `kupydo.config` module.
-        :raises RuntimeError: Only on `'async with'`, if Kupydo has not been configured.
+        :param autoconfig: When set to True, Kupydo will first try to load the
+            in-cluster config. If unsuccessful, it tries to load the current
+            context config. When set to False, the user is responsible for
+            loading the correct custom config using the `kupydo.config` module.
+        :raises RuntimeError: Only on `'async with'`, if Kupydo has not been
+            configured manually or is unable to automatically configure itself
+            when autoconfig is set to True.
         """
         self._autoconfig = autoconfig
 
@@ -62,13 +64,13 @@ class ApiClient:
     @error_handler
     async def replace(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
         """
-        :raises None:
+        :raises pydantic.ValidationError:
         """
         return await model.replace(self._client, kwargs)
 
     @error_handler
     async def patch(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
         """
-        :raises None:
+        :raises pydantic.ValidationError:
         """
         return await model.patch(self._client, kwargs)

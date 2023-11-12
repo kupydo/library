@@ -12,7 +12,6 @@ from __future__ import annotations as anno
 from dotmap import DotMap
 from typing import Type, Any
 from kubernetes_asyncio import client
-from kupydo.inner.registry import GlobalRegistry
 from kupydo.inner.types import StringDictAtd
 from kupydo.inner.base import (
     KupydoBaseValues,
@@ -34,19 +33,26 @@ class ConfigMap(KupydoBaseModel):
                  data: StringDictAtd = None,
                  immutable: bool = False
                  ) -> None:
-        loc = locals()
-        loc.pop('self', None)
-        values = ConfigMapValues(**loc)
-        values_dict = values.model_dump(warnings=False)
-        GlobalRegistry.insert((ConfigMap, values_dict))
-        self._values = DotMap(values)
-        self._namespace = 'default'
+        super().__init__(
+            values=locals(),
+            validator=ConfigMapValues,
+            model=ConfigMap
+        )
 
     @property
     def _api(self) -> Type[client.CoreV1Api]:
         return client.CoreV1Api
 
-    def _to_dict(self, new_values: ConfigMapValues | DotMap = None) -> dict:
+    @property
+    def _defaults(self) -> dict:
+        return dict(
+            labels=None,
+            annotations=None,
+            data=None,
+            immutable=False
+        )
+
+    def _raw_model(self, new_values: DotMap = None) -> dict:
         values = new_values or self._values
         return client.V1ConfigMap(
             api_version="v1",
@@ -64,7 +70,7 @@ class ConfigMap(KupydoBaseModel):
     async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).create_namespaced_config_map(
             namespace=self._namespace,
-            body=self._to_dict()
+            body=self._raw_model()
         )
 
     async def delete(self, session: client.ApiClient) -> client.V1Status:
@@ -80,24 +86,21 @@ class ConfigMap(KupydoBaseModel):
         )
 
     async def replace(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
-        new_values = DotMap(kwargs)
-        new_values.name = self._values.name
-
-        return await self._api(session).replace_namespaced_config_map(
+        merged_values = self._merge_values(kwargs, method='replace', validator=ConfigMapValues)
+        response = await self._api(session).replace_namespaced_config_map(
             name=self._values.name,
             namespace=self._namespace,
-            body=self._to_dict(new_values)
+            body=self._raw_model(merged_values)
         )
+        self._values = merged_values
+        return response
 
     async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
-        new_values = self._values.copy()
-        new_values.update(kwargs)
-        new_values.name = self._values.name
-
+        merged_values = self._merge_values(kwargs, method='patch', validator=ConfigMapValues)
         response = await self._api(session).patch_namespaced_config_map(
             name=self._values.name,
             namespace=self._namespace,
-            body=self._to_dict(new_values)
+            body=self._raw_model(merged_values)
         )
-        self._values = new_values
+        self._values = merged_values
         return response
