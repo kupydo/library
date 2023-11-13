@@ -14,14 +14,18 @@ from typing import Annotated, TypeVar, Type, Optional
 
 
 __all__ = [
-    "NamespaceAtd",
-    "StringDictAtd",
+    "OptionalStr",
+    "OptionalBool",
+    "OptionalDictStr",
     "ApiType",
     "RawModel"
 ]
 
-NamespaceAtd = Annotated[Optional[str], Field(default='default')]
-StringDictAtd = Annotated[Optional[dict[str, str]], Field(default_factory=lambda: dict())]
+
+OptionalStr = Annotated[Optional[str], Field(default=None)]
+OptionalBool = Annotated[Optional[bool], Field(default=None)]
+OptionalDictStr = Annotated[Optional[dict[str, str]], Field(default=None)]
+
 
 ApiType = TypeVar(
     'ApiType',

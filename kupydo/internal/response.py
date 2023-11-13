@@ -18,7 +18,7 @@ from rich.panel import Panel
 from rich import print
 from .base import KupydoBaseModel
 from .types import RawModel
-from .utils import pathutils
+import utils
 
 
 __all__ = ["ErrorDetails", "Response", "error_handler"]
@@ -83,8 +83,8 @@ def error_handler(coro: Callable) -> Callable:
                     reason=error.__class__.__name__,
                     message=str(error),
                     details=dict(
-                        filename=pathutils.extract_tb_filepath(tb),
-                        instruction=pathutils.extract_tb_line(tb),
+                        filename=utils.extract_tb_filepath(tb),
+                        instruction=utils.extract_tb_line(tb),
                         lineno=tb.tb_lineno
                     )
                 )

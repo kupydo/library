@@ -9,30 +9,28 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations as anno
+from typing import Type
 from dotmap import DotMap
-from typing import Type, Any
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
-from kupydo.internal.base import (
-    KupydoBaseValues,
-    KupydoBaseModel
-)
+from kupydo.internal.base import *
+from kupydo.internal import utils
 
 
 class ConfigMapValues(KupydoBaseValues):
-    data: StringDictAtd
-    immutable: bool = False
+    data: OptionalDictStr
+    immutable: OptionalBool
 
 
 class ConfigMap(KupydoBaseModel):
     def __init__(self,
                  *,
                  name: str,
-                 namespace: NamespaceAtd = None,
-                 annotations: StringDictAtd = None,
-                 labels: StringDictAtd = None,
-                 data: StringDictAtd = None,
-                 immutable: bool = False
+                 namespace: OptionalStr = None,
+                 annotations: OptionalDictStr = None,
+                 labels: OptionalDictStr = None,
+                 data: OptionalDictStr = None,
+                 immutable: OptionalBool = None
                  ) -> None:
         super().__init__(
             values=locals(),
@@ -43,16 +41,23 @@ class ConfigMap(KupydoBaseModel):
     def _api(self) -> Type[client.CoreV1Api]:
         return client.CoreV1Api
 
-    def _raw_model(self, new_values: DotMap = None) -> dict:
+    @property
+    def _exclude(self) -> DotMap:
+        return DotMap(
+            name=True,
+            namespace=True
+        )
+
+    def _to_dict(self, new_values: DotMap = None) -> dict:
         v: ConfigMapValues = new_values or self._values
         return client.V1ConfigMap(
             api_version="v1",
             kind="ConfigMap",
             metadata=client.V1ObjectMeta(
                 name=v.name,
-                labels=v.labels,
+                namespace=v.namespace,
                 annotations=v.annotations,
-                namespace=v.namespace
+                labels=v.labels
             ),
             immutable=v.immutable,
             data=v.data
@@ -61,7 +66,7 @@ class ConfigMap(KupydoBaseModel):
     async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).create_namespaced_config_map(
             namespace=self._values.namespace,
-            body=self._raw_model()
+            body=self._to_dict()
         )
 
     async def delete(self, session: client.ApiClient) -> client.V1Status:
@@ -76,22 +81,22 @@ class ConfigMap(KupydoBaseModel):
             namespace=self._values.namespace
         )
 
-    async def replace(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
-        merged_values = self._merge_values(kwargs, method='replace', validator=ConfigMapValues)
+    async def replace(self, session: client.ApiClient, new: ConfigMap) -> client.V1ConfigMap:
+        merged = utils.deep_merge(self._values, new.values, self._exclude, method='replace')
         response = await self._api(session).replace_namespaced_config_map(
             name=self._values.name,
             namespace=self._values.namespace,
-            body=self._raw_model(merged_values)
+            body=self._to_dict(merged)
         )
-        self._values = merged_values
+        self._values = merged
         return response
 
-    async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
-        merged_values = self._merge_values(kwargs, method='patch', validator=ConfigMapValues)
+    async def patch(self, session: client.ApiClient, new: ConfigMap) -> client.V1ConfigMap:
+        merged = utils.deep_merge(self._values, new.values, self._exclude, method='patch')
         response = await self._api(session).patch_namespaced_config_map(
             name=self._values.name,
             namespace=self._values.namespace,
-            body=self._raw_model(merged_values)
+            body=self._to_dict(merged)
         )
-        self._values = merged_values
+        self._values = merged
         return response
