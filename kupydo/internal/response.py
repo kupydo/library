@@ -18,7 +18,10 @@ from rich.panel import Panel
 from rich import print
 from .base import KupydoBaseModel
 from .types import RawModel
-import utils
+from .utils import (
+    extract_tb_filepath,
+    extract_tb_line
+)
 
 
 __all__ = ["ErrorDetails", "Response", "error_handler"]
@@ -40,10 +43,10 @@ class Response(Generic[RawModel]):
 
 
 def error_handler(coro: Callable) -> Callable:
-    async def closure(_self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
+    async def closure(_self, model: KupydoBaseModel, *args) -> Response[RawModel]:
         try:
             c = partial(coro, _self, model)
-            raw = await c(**kwargs) if kwargs else await c()
+            raw = await c(*args) if args else await c()
             return Response(code=200, raw=raw)
         except (ApiException, ClientError, Exception) as error:
             if isinstance(error, ApiException):
@@ -83,8 +86,8 @@ def error_handler(coro: Callable) -> Callable:
                     reason=error.__class__.__name__,
                     message=str(error),
                     details=dict(
-                        filename=utils.extract_tb_filepath(tb),
-                        instruction=utils.extract_tb_line(tb),
+                        filename=extract_tb_filepath(tb),
+                        instruction=extract_tb_line(tb),
                         lineno=tb.tb_lineno
                     )
                 )

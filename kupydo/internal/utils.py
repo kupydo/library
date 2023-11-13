@@ -51,7 +51,12 @@ def deep_merge(base: dict | DotMap,
                exclude: dict | DotMap,
                method: Literal['patch', 'replace']) -> dict | DotMap:
     def is_mapping(v):
-        return isinstance(v, dict) or isinstance(v, DotMap)
+        return isinstance(v, dict | DotMap)
+
+    if method == 'replace':
+        for key in list(base.keys()):
+            if key not in update and not is_mapping(base[key]):
+                del base[key]
 
     for key, value in update.items():
         if method == 'patch' and value is None:
@@ -60,7 +65,7 @@ def deep_merge(base: dict | DotMap,
             if is_mapping(value) and is_mapping(base.get(key)) and is_mapping(exclude[key]):
                 deep_merge(base[key], value, exclude[key], method)
             continue
-        if is_mapping(value) and is_mapping(base.get(key)):
+        if key in base and is_mapping(value) and is_mapping(base[key]):
             deep_merge(base[key], value, dict(), method)
         else:
             base[key] = value

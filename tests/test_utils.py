@@ -8,33 +8,101 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+import pytest
+from dotmap import DotMap
 from kupydo.internal import utils
 
 
-def test_deep_merge_replace_simple():
-    base = {"a": {"b": {"c": 1}}}
-    update = {"a": {"b": {"c": 2}}}
-    expected = {"a": {"b": {"c": 2}}}
-    assert utils.deep_merge(base, update, dict(), method='replace') == expected
+@pytest.fixture
+def base():
+    return DotMap(
+        name="aaaaa",
+        namespace="bbbbb",
+        labels=DotMap(
+            firstLabel="ccccc",
+            secondLabel="ddddd"
+        ),
+        annotations=DotMap(
+            firstAnno="eeeee",
+            secondAnno="fffff"
+        ),
+        data=DotMap(
+            firstData="ggggg",
+            secondData="hhhhh"
+        ),
+        immutable=True
+    )
 
 
-def test_deep_merge_replace_nested():
-    base = {"a": {"b": {"c": 1, "d": 2}, "e": 3}, "f": 4}
-    update = {"a": {"b": {"c": 10}}}
-    expected = {"a": {"b": {"c": 10, "d": 2}, "e": 3}, "f": 4}
-    assert utils.deep_merge(base, update, dict(), method='replace') == expected
+@pytest.fixture
+def update():
+    return DotMap(
+        name="iiiii",
+        namespace="jjjjj",
+        labels=DotMap(
+            firstLabel=99999,
+            secondLabel=88888
+        ),
+        annotations=None,
+        data=DotMap(
+            thirdData="kkkkk"
+        ),
+        immutable=None
+    )
 
 
-def test_deep_merge_patch():
-    base = {"a": {"b": {"c": 1, "d": 2}, "e": 3}, "f": 4}
-    update = {"a": {"b": {"c": None}, "e": None}, "f": 5}
-    expected = {"a": {"b": {"c": 1, "d": 2}, "e": 3}, "f": 5}
-    assert utils.deep_merge(base, update, dict(), method='patch') == expected
+@pytest.fixture
+def exclude():
+    return DotMap(
+        name=True,
+        namespace=True
+    )
 
 
-def test_deep_merge_exclude():
-    base = {"a": {"b": {"c": 1, "d": 2}, "e": 3}, "f": 4}
-    update = {"a": {"b": {"c": 10, "d": 20}, "e": 30}, "f": 40}
-    exclude = {"a": {"b": {"c": True}}}
-    expected = {"a": {"b": {"c": 1, "d": 20}, "e": 30}, "f": 40}
-    assert utils.deep_merge(base, update, exclude, method='replace') == expected
+@pytest.fixture
+def patch_expected():
+    return DotMap(
+        name="aaaaa",
+        namespace="bbbbb",
+        labels=DotMap(
+            firstLabel=99999,
+            secondLabel=88888
+        ),
+        annotations=DotMap(
+            firstAnno="eeeee",
+            secondAnno="fffff"
+        ),
+        data=DotMap(
+            firstData="ggggg",
+            secondData="hhhhh",
+            thirdData="kkkkk"
+        ),
+        immutable=True
+    )
+
+
+@pytest.fixture
+def replace_expected():
+    return DotMap(
+        name="aaaaa",
+        namespace="bbbbb",
+        labels=DotMap(
+            firstLabel=99999,
+            secondLabel=88888
+        ),
+        annotations=None,
+        data=DotMap(
+            thirdData="kkkkk"
+        ),
+        immutable=None
+    )
+
+
+def test_deep_merge_patch(base, update, exclude, patch_expected):
+    result = utils.deep_merge(base, update, exclude, method='patch')
+    assert result == patch_expected
+
+
+def test_deep_merge_replace(base, update, exclude, replace_expected):
+    result = utils.deep_merge(base, update, exclude, method='replace')
+    assert result == replace_expected
