@@ -12,84 +12,75 @@ from __future__ import annotations as anno
 from dotmap import DotMap
 from typing import Type, Any
 from kubernetes_asyncio import client
-from kupydo.inner.types import StringDictAtd
-from kupydo.inner.base import (
+from kupydo.internal.types import *
+from kupydo.internal.base import (
     KupydoBaseValues,
     KupydoBaseModel
 )
 
 
 class ConfigMapValues(KupydoBaseValues):
-    immutable: bool
     data: StringDictAtd
+    immutable: bool = False
 
 
 class ConfigMap(KupydoBaseModel):
     def __init__(self,
                  *,
                  name: str,
-                 labels: StringDictAtd = None,
+                 namespace: NamespaceAtd = None,
                  annotations: StringDictAtd = None,
+                 labels: StringDictAtd = None,
                  data: StringDictAtd = None,
                  immutable: bool = False
                  ) -> None:
         super().__init__(
             values=locals(),
-            validator=ConfigMapValues,
-            model=ConfigMap
+            validator=ConfigMapValues
         )
 
     @property
     def _api(self) -> Type[client.CoreV1Api]:
         return client.CoreV1Api
 
-    @property
-    def _defaults(self) -> dict:
-        return dict(
-            labels=None,
-            annotations=None,
-            data=None,
-            immutable=False
-        )
-
     def _raw_model(self, new_values: DotMap = None) -> dict:
-        values = new_values or self._values
+        v: ConfigMapValues = new_values or self._values
         return client.V1ConfigMap(
             api_version="v1",
             kind="ConfigMap",
             metadata=client.V1ObjectMeta(
-                name=values.name,
-                labels=values.labels,
-                annotations=values.annotations,
-                namespace=self._namespace
+                name=v.name,
+                labels=v.labels,
+                annotations=v.annotations,
+                namespace=v.namespace
             ),
-            immutable=values.immutable or False,
-            data=values.data
+            immutable=v.immutable,
+            data=v.data
         ).to_dict()
 
     async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).create_namespaced_config_map(
-            namespace=self._namespace,
+            namespace=self._values.namespace,
             body=self._raw_model()
         )
 
     async def delete(self, session: client.ApiClient) -> client.V1Status:
         return await self._api(session).delete_namespaced_config_map(
             name=self._values.name,
-            namespace=self._namespace
+            namespace=self._values.namespace
         )
 
     async def read(self, session: client.ApiClient) -> client.V1ConfigMap:
         return await self._api(session).read_namespaced_config_map(
             name=self._values.name,
-            namespace=self._namespace
+            namespace=self._values.namespace
         )
 
     async def replace(self, session: client.ApiClient, kwargs: dict[str, Any]) -> client.V1ConfigMap:
         merged_values = self._merge_values(kwargs, method='replace', validator=ConfigMapValues)
         response = await self._api(session).replace_namespaced_config_map(
             name=self._values.name,
-            namespace=self._namespace,
+            namespace=self._values.namespace,
             body=self._raw_model(merged_values)
         )
         self._values = merged_values
@@ -99,7 +90,7 @@ class ConfigMap(KupydoBaseModel):
         merged_values = self._merge_values(kwargs, method='patch', validator=ConfigMapValues)
         response = await self._api(session).patch_namespaced_config_map(
             name=self._values.name,
-            namespace=self._namespace,
+            namespace=self._values.namespace,
             body=self._raw_model(merged_values)
         )
         self._values = merged_values

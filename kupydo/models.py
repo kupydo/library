@@ -8,4 +8,4 @@
 #   
 #   SPDX-License-Identifier: MIT
 #
-from kupydo.inner.models.namespaced import *
+from kupydo.internal.models.namespaced import *

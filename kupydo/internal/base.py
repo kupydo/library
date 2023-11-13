@@ -11,11 +11,14 @@
 from __future__ import annotations
 from kubernetes_asyncio import client
 from pydantic import BaseModel
-from abc import ABC, abstractmethod
-from typing import Type, Literal, Any
 from dotmap import DotMap
-from .types import ApiType, StringDictAtd
-from .registry import GlobalRegistry
+from abc import ABC, abstractmethod
+from typing import Literal, Type, Any
+from .registry import (
+    DisabledRegistryError,
+    GlobalRegistry
+)
+from .types import *
 
 
 __all__ = ["KupydoBaseValues", "KupydoBaseModel"]
@@ -23,35 +26,31 @@ __all__ = ["KupydoBaseValues", "KupydoBaseModel"]
 
 class KupydoBaseValues(BaseModel):
     name: str
-    labels: StringDictAtd
+    namespace: NamespaceAtd
     annotations: StringDictAtd
+    labels: StringDictAtd
 
 
 class KupydoBaseModel(ABC):
 
     @abstractmethod
-    def __init__(self,
-                 values: dict[str, Any],
-                 validator: Type[KupydoBaseValues],
-                 model: Type[KupydoBaseModel]
-                 ) -> None:
-        def init(_self, _values: dict[str, Any], _namespace: str):
-            _self._values = DotMap(_values)
-            _self._namespace = _namespace
-
+    def __init__(self, values: dict[str, Any], validator: Type[KupydoBaseValues]) -> None:
         values.pop('self', None)
         valids = validator(**values)
         dump = valids.model_dump(warnings=False)
-        GlobalRegistry.insert(
-            name=valids.name,
-            model=type(
-                'DynamicClass', (model, ),
-                {'__init__': init}
-            ),
-            values=dump
-        )
-        self._values = DotMap(dump)
-        self._namespace = 'default'
+        self._values = DotMap(dump, _prevent_method_masking=True)
+        try:
+            GlobalRegistry.register(
+                model=type(self),
+                values=dump
+            )
+        except DisabledRegistryError:
+            pass
+
+    # def _defaults(self, validator: Type[KupydoBaseValues]) -> dict:
+    #     values = validator(name=self._values.name)
+    #     dump = values.model_dump(warnings=False)
+    #     return DotMap(dump)
 
     def _merge_values(self,
                       kwargs: dict[str, Any],
@@ -59,15 +58,11 @@ class KupydoBaseModel(ABC):
                       validator: Type[KupydoBaseValues]
                       ) -> DotMap:
         # TODO: Implement method
-        pass
+        return DotMap()
 
     @property
     @abstractmethod
     def _api(self) -> ApiType: ...
-
-    @property
-    @abstractmethod
-    def _defaults(self) -> dict: ...
 
     @abstractmethod
     def _raw_model(self, new_values: DotMap = None) -> dict: ...
@@ -82,7 +77,7 @@ class KupydoBaseModel(ABC):
     async def read(self, session: client.ApiClient) -> Any: ...
 
     @abstractmethod
-    async def replace(self, session: client.ApiClient, kwargs: dict[str, Any]) -> Any: ...
+    async def replace(self, session: client.ApiClient, values_from: KupydoBaseModel) -> Any: ...
 
     @abstractmethod
-    async def patch(self, session: client.ApiClient, kwargs: dict[str, Any]) -> Any: ...
+    async def patch(self, session: client.ApiClient, values_from: KupydoBaseModel) -> Any: ...

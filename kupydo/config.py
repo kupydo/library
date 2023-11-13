@@ -8,4 +8,4 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from kupydo.inner.config import *
+from kupydo.internal.config import *

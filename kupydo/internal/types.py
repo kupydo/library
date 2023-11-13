@@ -13,10 +13,15 @@ from kubernetes_asyncio import client
 from typing import Annotated, TypeVar, Type, Optional
 
 
-__all__ = ["StringDictAtd", "ApiType", "RawModel"]
+__all__ = [
+    "NamespaceAtd",
+    "StringDictAtd",
+    "ApiType",
+    "RawModel"
+]
 
-
-StringDictAtd = Annotated[Optional[dict[str, str]], Field(default=None)]
+NamespaceAtd = Annotated[Optional[str], Field(default='default')]
+StringDictAtd = Annotated[Optional[dict[str, str]], Field(default_factory=lambda: dict())]
 
 ApiType = TypeVar(
     'ApiType',

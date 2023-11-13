@@ -28,7 +28,7 @@ class ApiClient:
         self._client = client.ApiClient()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, *_):
         await self._client.close()
 
     @error_handler
@@ -44,9 +44,9 @@ class ApiClient:
         return await model.read(self._client)
 
     @error_handler
-    async def replace(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
-        return await model.replace(self._client, kwargs)
+    async def replace(self, model: KupydoBaseModel, values_from: KupydoBaseModel) -> Response[RawModel]:
+        return await model.replace(self._client, values_from)
 
     @error_handler
-    async def patch(self, model: KupydoBaseModel, **kwargs) -> Response[RawModel]:
-        return await model.patch(self._client, kwargs)
+    async def patch(self, model: KupydoBaseModel, values_from: KupydoBaseModel) -> Response[RawModel]:
+        return await model.patch(self._client, values_from)
