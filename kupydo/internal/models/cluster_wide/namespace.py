@@ -8,78 +8,82 @@
 #   
 #   SPDX-License-Identifier: MIT
 #
-from typing import Any, Type
-from pydantic import validate_call
+from __future__ import annotations as anno
+from typing import Type
+from dotmap import DotMap
 from kubernetes_asyncio import client
-
-from models.values import BaseValues
-from models.deployment import Deployment
-from abstract import AbstractKubeModel
+from kupydo.internal.types import *
+from kupydo.internal.base import *
+from kupydo.internal import utils
 
 
 __all__ = ["Namespace"]
 
 
-class Namespace(AbstractKubeModel):
-    Deployment: Type[Deployment] = Deployment
-
-    @validate_call
-    def __init__(
-            self, *,
-            name: str,
-            labels: dict[str, str] = None,
-            annotations: dict[str, str] = None
-    ) -> None:
-        self.__resources__ = list()
-        self.__values__ = BaseValues(
-            name=name,
-            labels=labels,
-            annotations=annotations
+class Namespace(KupydoBaseModel):
+    def __init__(self,
+                 *,
+                 name: str,
+                 labels: OptionalDictStr = None,
+                 annotations: OptionalDictStr = None
+                 ) -> None:
+        super().__init__(
+            values=locals(),
+            validator=KupydoBaseValues
         )
 
-    def __getattribute__(self, item: Any) -> Any:
-        def outer(obj2: type) -> callable:
-            def inner(*args, **kwargs) -> object:
-                obj3 = obj2(*args, **kwargs)
-                setattr(obj3, "__namespace__", self.name)
-                self.__resources__.append(obj3)
-                return obj3
-            return inner
-
-        obj = vars(Namespace).get(item)
-        if isinstance(obj, type) and issubclass(obj, AbstractKubeModel):
-            return outer(obj)
-        return super().__getattribute__(item)
+    @property
+    def _api(self) -> Type[client.CoreV1Api]:
+        return client.CoreV1Api
 
     @property
-    def values(self) -> BaseValues:
-        return self.__values__
+    def _exclude(self) -> DotMap:
+        return DotMap(
+            name=True,
+            namespace=True
+        )
 
-    @values.setter
-    def values(self, values: BaseValues) -> None:
-        self.__values__ = values
-
-    @property
-    def data_model(self) -> client.V1Namespace:
+    def _to_dict(self, new_values: DotMap = None) -> dict:
+        v: KupydoBaseValues = new_values or self._values
         return client.V1Namespace(
             api_version="v1",
             kind="Namespace",
             metadata=client.V1ObjectMeta(
-                name=self.values.name,
-                labels=self.values.labels,
-                annotations=self.values.annotations
+                name=v.name,
+                annotations=v.annotations,
+                labels=v.labels
             )
-        )
-
-    @property
-    def api_model(self) -> Type[client.CoreV1Api]:
-        return client.CoreV1Api
+        ).to_dict()
 
     async def create(self, session: client.ApiClient) -> client.V1Namespace:
-        return await self.api_model(session).create_namespace(self.data_model)
+        return await self._api(session).create_namespace(
+            body=self._to_dict()
+        )
 
     async def delete(self, session: client.ApiClient) -> client.V1Status:
-        return await self.api_model(session).delete_namespace(self.values.name)
+        return await self._api(session).delete_namespace(
+            name=self._values.name
+        )
 
     async def read(self, session: client.ApiClient) -> client.V1Namespace:
-        return await self.api_model(session).read_namespace(self.values.name)
+        return await self._api(session).read_namespace(
+            name=self._values.name
+        )
+
+    async def replace(self, session: client.ApiClient, values_from: Namespace) -> client.V1Namespace:
+        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='replace')
+        response = await self._api(session).replace_namespace(
+            name=self._values.name,
+            body=self._to_dict(merged)
+        )
+        self._values = merged
+        return response
+
+    async def patch(self, session: client.ApiClient, values_from: Namespace) -> client.V1Namespace:
+        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='patch')
+        response = await self._api(session).patch_namespace(
+            name=self._values.name,
+            body=self._to_dict(merged)
+        )
+        self._values = merged
+        return response

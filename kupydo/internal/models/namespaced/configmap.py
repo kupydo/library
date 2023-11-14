@@ -81,8 +81,8 @@ class ConfigMap(KupydoBaseModel):
             namespace=self._values.namespace
         )
 
-    async def replace(self, session: client.ApiClient, new: ConfigMap) -> client.V1ConfigMap:
-        merged = utils.deep_merge(self._values, new.values, self._exclude, method='replace')
+    async def replace(self, session: client.ApiClient, values_from: ConfigMap) -> client.V1ConfigMap:
+        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='replace')
         response = await self._api(session).replace_namespaced_config_map(
             name=self._values.name,
             namespace=self._values.namespace,
@@ -91,8 +91,8 @@ class ConfigMap(KupydoBaseModel):
         self._values = merged
         return response
 
-    async def patch(self, session: client.ApiClient, new: ConfigMap) -> client.V1ConfigMap:
-        merged = utils.deep_merge(self._values, new.values, self._exclude, method='patch')
+    async def patch(self, session: client.ApiClient, values_from: ConfigMap) -> client.V1ConfigMap:
+        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='patch')
         response = await self._api(session).patch_namespaced_config_map(
             name=self._values.name,
             namespace=self._values.namespace,
