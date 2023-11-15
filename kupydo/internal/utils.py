@@ -14,7 +14,7 @@ import linecache
 from pathlib import Path
 from dotmap import DotMap
 from types import TracebackType
-from typing import Literal
+from typing import Literal, TypeVar, Mapping
 
 
 __all__ = [
@@ -23,6 +23,8 @@ __all__ = [
     "extract_tb_filepath",
     "deep_merge"
 ]
+
+T = TypeVar('T', bound=Mapping)
 
 
 def generate_name() -> str:
@@ -46,10 +48,10 @@ def extract_tb_filepath(tb: TracebackType) -> str:
     return path.as_posix()
 
 
-def deep_merge(base: dict | DotMap,
+def deep_merge(base: T,
                update: dict | DotMap,
                exclude: dict | DotMap,
-               method: Literal['patch', 'replace']) -> dict | DotMap:
+               method: Literal['patch', 'replace']) -> T:
     def is_mapping(v):
         return isinstance(v, dict | DotMap)
 

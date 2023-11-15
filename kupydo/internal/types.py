@@ -10,10 +10,14 @@
 #
 from pydantic import Field
 from kubernetes_asyncio import client
-from typing import Annotated, TypeVar, Type, Optional
+from typing import (
+    Callable, Coroutine, Annotated,
+    TypeVar, Type, Optional, Any
+)
 
 
 __all__ = [
+    "AsyncCallable",
     "OptionalStr",
     "OptionalBool",
     "OptionalDictStr",
@@ -21,6 +25,8 @@ __all__ = [
     "RawModel"
 ]
 
+
+AsyncCallable = Callable[..., Coroutine[Any, Any, Any]]
 
 OptionalStr = Annotated[Optional[str], Field(default=None)]
 OptionalBool = Annotated[Optional[bool], Field(default=None)]
@@ -53,5 +59,6 @@ RawModel = TypeVar(
     client.V1RoleBinding,
     client.V1Secret,
     client.V1Service,
-    client.V1ServiceAccount
+    client.V1ServiceAccount,
+    client.V1Status
 )

@@ -9,18 +9,16 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations as anno
-from typing import Type
 from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
-from kupydo.internal import utils
 
 
 __all__ = ["Namespace"]
 
 
-class Namespace(KupydoBaseModel):
+class Namespace(KupydoClusterWideModel):
     def __init__(self,
                  *,
                  name: str,
@@ -30,17 +28,6 @@ class Namespace(KupydoBaseModel):
         super().__init__(
             values=locals(),
             validator=KupydoBaseValues
-        )
-
-    @property
-    def _api(self) -> Type[client.CoreV1Api]:
-        return client.CoreV1Api
-
-    @property
-    def _exclude(self) -> DotMap:
-        return DotMap(
-            name=True,
-            namespace=True
         )
 
     def _to_dict(self, new_values: DotMap = None) -> dict:
@@ -55,35 +42,12 @@ class Namespace(KupydoBaseModel):
             )
         ).to_dict()
 
-    async def create(self, session: client.ApiClient) -> client.V1Namespace:
-        return await self._api(session).create_namespace(
-            body=self._to_dict()
+    def _api(self, session: client.ApiClient) -> KupydoApiActions:
+        api = client.CoreV1Api(session)
+        return KupydoApiActions(
+            create=api.create_namespace,
+            delete=api.delete_namespace,
+            read=api.read_namespace,
+            replace=api.replace_namespace,
+            patch=api.patch_namespace
         )
-
-    async def delete(self, session: client.ApiClient) -> client.V1Status:
-        return await self._api(session).delete_namespace(
-            name=self._values.name
-        )
-
-    async def read(self, session: client.ApiClient) -> client.V1Namespace:
-        return await self._api(session).read_namespace(
-            name=self._values.name
-        )
-
-    async def replace(self, session: client.ApiClient, values_from: Namespace) -> client.V1Namespace:
-        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='replace')
-        response = await self._api(session).replace_namespace(
-            name=self._values.name,
-            body=self._to_dict(merged)
-        )
-        self._values = merged
-        return response
-
-    async def patch(self, session: client.ApiClient, values_from: Namespace) -> client.V1Namespace:
-        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='patch')
-        response = await self._api(session).patch_namespace(
-            name=self._values.name,
-            body=self._to_dict(merged)
-        )
-        self._values = merged
-        return response

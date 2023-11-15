@@ -9,12 +9,10 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations as anno
-from typing import Type
 from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
-from kupydo.internal import utils
 
 
 class ConfigMapValues(KupydoBaseValues):
@@ -22,7 +20,7 @@ class ConfigMapValues(KupydoBaseValues):
     immutable: OptionalBool
 
 
-class ConfigMap(KupydoBaseModel):
+class ConfigMap(KupydoNamespacedModel):
     def __init__(self,
                  *,
                  name: str,
@@ -35,17 +33,6 @@ class ConfigMap(KupydoBaseModel):
         super().__init__(
             values=locals(),
             validator=ConfigMapValues
-        )
-
-    @property
-    def _api(self) -> Type[client.CoreV1Api]:
-        return client.CoreV1Api
-
-    @property
-    def _exclude(self) -> DotMap:
-        return DotMap(
-            name=True,
-            namespace=True
         )
 
     def _to_dict(self, new_values: DotMap = None) -> dict:
@@ -63,40 +50,12 @@ class ConfigMap(KupydoBaseModel):
             data=v.data
         ).to_dict()
 
-    async def create(self, session: client.ApiClient) -> client.V1ConfigMap:
-        return await self._api(session).create_namespaced_config_map(
-            namespace=self._values.namespace,
-            body=self._to_dict()
+    def _api(self, session: client.ApiClient) -> KupydoApiActions:
+        api = client.CoreV1Api(session)
+        return KupydoApiActions(
+            create=api.create_namespaced_config_map,
+            delete=api.delete_namespaced_config_map,
+            read=api.read_namespaced_config_map,
+            replace=api.replace_namespaced_config_map,
+            patch=api.patch_namespaced_config_map
         )
-
-    async def delete(self, session: client.ApiClient) -> client.V1Status:
-        return await self._api(session).delete_namespaced_config_map(
-            name=self._values.name,
-            namespace=self._values.namespace
-        )
-
-    async def read(self, session: client.ApiClient) -> client.V1ConfigMap:
-        return await self._api(session).read_namespaced_config_map(
-            name=self._values.name,
-            namespace=self._values.namespace
-        )
-
-    async def replace(self, session: client.ApiClient, values_from: ConfigMap) -> client.V1ConfigMap:
-        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='replace')
-        response = await self._api(session).replace_namespaced_config_map(
-            name=self._values.name,
-            namespace=self._values.namespace,
-            body=self._to_dict(merged)
-        )
-        self._values = merged
-        return response
-
-    async def patch(self, session: client.ApiClient, values_from: ConfigMap) -> client.V1ConfigMap:
-        merged = utils.deep_merge(self._values, values_from.values, self._exclude, method='patch')
-        response = await self._api(session).patch_namespaced_config_map(
-            name=self._values.name,
-            namespace=self._values.namespace,
-            body=self._to_dict(merged)
-        )
-        self._values = merged
-        return response
