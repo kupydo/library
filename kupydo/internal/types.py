@@ -20,6 +20,7 @@ __all__ = [
     "AsyncCallable",
     "OptionalStr",
     "OptionalBool",
+    "OptionalListStr",
     "OptionalDictStr",
     "ApiType",
     "RawModel"
@@ -30,6 +31,7 @@ AsyncCallable = Callable[..., Coroutine[Any, Any, Any]]
 
 OptionalStr = Annotated[Optional[str], Field(default=None)]
 OptionalBool = Annotated[Optional[bool], Field(default=None)]
+OptionalListStr = Annotated[Optional[list[str]], Field(default=None)]
 OptionalDictStr = Annotated[Optional[dict[str, str]], Field(default=None)]
 
 

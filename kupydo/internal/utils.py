@@ -10,6 +10,8 @@
 #
 import random
 import string
+import base64
+import inspect
 import linecache
 from pathlib import Path
 from dotmap import DotMap
@@ -72,3 +74,22 @@ def deep_merge(base: T,
         else:
             base[key] = value
     return base
+
+
+def read_encode_files(file_names: list[str] | None) -> dict[str, str] | None:
+    if not file_names:
+        return
+
+    caller_frame = inspect.stack()[2]
+    caller_path = Path(caller_frame.filename).parent
+
+    encoded_files = dict()
+
+    for file_name in file_names:
+        file_path = caller_path / file_name
+
+        with file_path.open("rb") as file:
+            encoded_content = base64.b64encode(file.read()).decode("utf-8")
+            encoded_files[file_name] = encoded_content
+
+    return encoded_files

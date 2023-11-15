@@ -56,8 +56,11 @@ class KupydoBaseModel(ABC):
                  values: dict[str, Any],
                  validator: Type[KupydoBaseValues]
                  ) -> None:
-        values.pop('self', None)
-        valids = validator(**values)
+        filtered_values = {
+            k: v for k, v in values.items()
+            if k in validator.model_fields
+        }
+        valids = validator(**filtered_values)
         dump = valids.model_dump(warnings=False)
         self._values = DotMap(dump, _prevent_method_masking=True)
         try:

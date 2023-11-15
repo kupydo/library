@@ -13,10 +13,12 @@ from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
+from kupydo.internal import utils
 
 
 class ConfigMapValues(KupydoBaseValues):
     data: OptionalDictStr
+    binary_data: OptionalListStr
     immutable: OptionalBool
 
 
@@ -28,8 +30,10 @@ class ConfigMap(KupydoNamespacedModel):
                  annotations: OptionalDictStr = None,
                  labels: OptionalDictStr = None,
                  data: OptionalDictStr = None,
+                 files: OptionalListStr = None,
                  immutable: OptionalBool = None
                  ) -> None:
+        binary_data = utils.read_encode_files(files)
         super().__init__(
             values=locals(),
             validator=ConfigMapValues
@@ -47,6 +51,7 @@ class ConfigMap(KupydoNamespacedModel):
                 labels=v.labels
             ),
             immutable=v.immutable,
+            binary_data=v.binary_data,
             data=v.data
         ).to_dict()
 
