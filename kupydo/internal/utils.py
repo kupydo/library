@@ -12,6 +12,7 @@ import uuid
 import random
 import string
 import base64
+import inspect
 import linecache
 from pathlib import Path
 from dotmap import DotMap
@@ -76,33 +77,38 @@ def deep_merge(base: T,
     return base
 
 
-def read_encode_file(file_path: Path | str) -> str:
-    with open(file_path, 'rb') as file:
+def read_encode_file(file_path: Path | str) -> str | None:
+    target = Path(file_path)
+
+    if file_path.startswith('.'):
+        lib_path = Path(__file__).parent
+        for frame_info in inspect.stack():
+            frame_file_path = Path(frame_info.filename)
+            if not frame_file_path.is_relative_to(lib_path):
+                target = frame_file_path.parent / file_path
+                break
+
+    target = target.resolve(strict=True)
+    with target.open('rb') as file:
         return base64.b64encode(file.read()).decode()
 
 
 def create_secret_id() -> str:
-    return uuid.uuid4().hex
-
-
-def wrap_secret_id(unwrapped_id: str) -> str:
-    return f"[ENC_ID:{unwrapped_id}:ID_END]"
-
-
-def unwrap_secret_id(wrapped_id: str) -> str:
-    return wrapped_id.split(':')[1]
+    return f"[ENC_ID:{uuid.uuid4().hex}:ID_END]"
 
 
 def validate_secret_id(sec_id: str) -> bool:
-    if ':' in sec_id:
-        if sec_id.count(':') != 2:
-            return False
-        prefix, sec_id, suffix = sec_id.split(':')
-        if not prefix == '[ENC_ID':
-            return False
-        elif not suffix == 'ID_END]':
-            return False
-    if not len(sec_id) == 32:
+    if ':' not in sec_id:
+        return False
+    elif sec_id.count(':') != 2:
+        return False
+
+    prefix, sec_id, suffix = sec_id.split(':')
+    if not prefix == '[ENC_ID':
+        return False
+    elif not suffix == 'ID_END]':
+        return False
+    elif not len(sec_id) == 32:
         return False
     elif not all([
         c in '0123456789abcdef'
