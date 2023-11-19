@@ -12,10 +12,11 @@ from __future__ import annotations
 from typing import Type, Any
 from dotmap import DotMap
 from pathlib import Path
+from kupydo.internal import utils
+from kupydo.internal.errors import *
 
 
 __all__ = [
-    "DisabledRegistryError",
     "GlobalRegistry",
     "LocalRegistry",
     "DynamicTypeRegistry"
@@ -25,18 +26,16 @@ __all__ = [
 _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
 
 
-class DisabledRegistryError(Exception):
-    def __init__(self):
-        super().__init__("Must enable GlobalRegistry before use!")
-
-
 class GlobalRegistry:
     _templates: _ResourceTemplates = list()
+    _decrypted: dict[str, str] = dict()
     _enabled: bool = False
 
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
         if not cls._enabled:
             raise DisabledRegistryError
+        elif not cls._templates:
+            raise ResourcesMissingError
         return LocalRegistry(cls._templates, namespace)
 
     @classmethod
@@ -49,14 +48,31 @@ class GlobalRegistry:
     def load_resources(cls, path: Path) -> None:
         if not cls._enabled:
             raise DisabledRegistryError
-        cls.clear_resources()
+        cls.reset()
         #  TODO: import modules with importlib
 
     @classmethod
-    def clear_resources(cls) -> None:
+    def get_secret(cls, key: str) -> str:
         if not cls._enabled:
             raise DisabledRegistryError
+        elif not cls._templates:
+            raise ResourcesMissingError
+        elif key not in cls._decrypted:
+            raise SecretNotFoundError(key)
+        return cls._decrypted[key]
+
+    @classmethod
+    def set_secret(cls, value: str) -> str:
+        if not cls._enabled:
+            raise DisabledRegistryError
+        key = utils.create_secret_id()
+        cls._decrypted[key] = value
+        return key
+
+    @classmethod
+    def reset(cls) -> None:
         cls._templates = list()
+        cls._decrypted = dict()
 
     @classmethod
     def enable(cls):

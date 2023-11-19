@@ -9,11 +9,16 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations as anno
+import inspect
+from pathlib import Path
 from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
 from kupydo.internal import utils
+
+
+__all__ = ["ConfigMapValues", "ConfigMap"]
 
 
 class ConfigMapValues(KupydoBaseValues):
@@ -33,7 +38,7 @@ class ConfigMap(KupydoNamespacedModel):
                  files: OptionalListStr = None,
                  immutable: OptionalBool = None
                  ) -> None:
-        binary_data = utils.read_encode_files(files)
+        binary_data = self._read_binary_files(files)
         super().__init__(
             values=locals(),
             validator=ConfigMapValues
@@ -64,3 +69,17 @@ class ConfigMap(KupydoNamespacedModel):
             replace=api.replace_namespaced_config_map,
             patch=api.patch_namespaced_config_map
         )
+
+    @staticmethod
+    def _read_binary_files(file_names: list[str] | None) -> dict[str, str] | None:
+        if file_names:
+            caller_frame = inspect.stack()[2]
+            caller_path = Path(caller_frame.filename).parent
+            encoded_files = dict()
+
+            for file_name in file_names:
+                file_path = caller_path / file_name
+                data_b64 = utils.read_encode_file(file_path)
+                encoded_files[file_name] = data_b64
+
+            return encoded_files

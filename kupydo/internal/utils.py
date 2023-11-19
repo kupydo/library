@@ -8,10 +8,10 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+import uuid
 import random
 import string
 import base64
-import inspect
 import linecache
 from pathlib import Path
 from dotmap import DotMap
@@ -76,20 +76,37 @@ def deep_merge(base: T,
     return base
 
 
-def read_encode_files(file_names: list[str] | None) -> dict[str, str] | None:
-    if not file_names:
-        return
+def read_encode_file(file_path: Path | str) -> str:
+    with open(file_path, 'rb') as file:
+        return base64.b64encode(file.read()).decode()
 
-    caller_frame = inspect.stack()[2]
-    caller_path = Path(caller_frame.filename).parent
 
-    encoded_files = dict()
+def create_secret_id() -> str:
+    return uuid.uuid4().hex
 
-    for file_name in file_names:
-        file_path = caller_path / file_name
 
-        with file_path.open("rb") as file:
-            encoded_content = base64.b64encode(file.read()).decode("utf-8")
-            encoded_files[file_name] = encoded_content
+def wrap_secret_id(unwrapped_id: str) -> str:
+    return f"[ENC_ID:{unwrapped_id}:ID_END]"
 
-    return encoded_files
+
+def unwrap_secret_id(wrapped_id: str) -> str:
+    return wrapped_id.split(':')[1]
+
+
+def validate_secret_id(sec_id: str) -> bool:
+    if ':' in sec_id:
+        if sec_id.count(':') != 2:
+            return False
+        prefix, sec_id, suffix = sec_id.split(':')
+        if not prefix == '[ENC_ID':
+            return False
+        elif not suffix == 'ID_END]':
+            return False
+    if not len(sec_id) == 32:
+        return False
+    elif not all([
+        c in '0123456789abcdef'
+        for c in sec_id
+    ]):
+        return False
+    return True
