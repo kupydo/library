@@ -32,5 +32,8 @@ class ResourcesMissingError(KupydoBaseError):
 
 
 class SecretNotFoundError(KupydoBaseError):
-    def __init__(self, enc_id: str):
-        super().__init__(f"Unable to find secret in registry by id: '{enc_id}'")
+    def __init__(self, sec_id: str):
+        super().__init__(
+            f"Unable to find secret in registry by id: "
+            f"'{sec_id.split(':')[1]}'"
+        )
