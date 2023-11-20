@@ -18,6 +18,7 @@ from kupydo.internal import utils
 __all__ = [
     "first_external_caller",
     "read_encode_file",
+    "extract_caller_block",
     "find_kwarg_line",
     "replace_kwarg_value"
 ]
@@ -45,27 +46,34 @@ def read_encode_file(file_path: Path | str) -> str | None:
         return base64.b64encode(file.read()).decode()
 
 
-def find_kwarg_line(keyword: str, current_value: str) -> tuple[Path, int]:
-    file_path, line_number = first_external_caller()
-
+def extract_caller_block(file_path: Path, line_number: int) -> tuple[list[str], int, int]:
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
     open_parentheses = 0
-    start_line = line_number - 1
-    end_line = start_line
+    start = line_number - 1
 
-    for i, line in enumerate(lines[start_line:], start=start_line):
+    for i, line in enumerate(lines[start:], start=start):
         open_parentheses += line.count('(')
         open_parentheses -= line.count(')')
         if open_parentheses == 0:
-            end_line = i
-            break
+            return lines, start, i
 
-    pattern = re.escape(keyword) + r'="' + re.escape(current_value) + r'"'
-    for i, line in enumerate(lines[start_line:end_line + 1], start=start_line):
-        if re.search(pattern, line):
-            return file_path, i
+
+def find_kwarg_line(keyword: str, current_value: str) -> tuple[Path, int]:
+    file_path, line_number = first_external_caller()
+    lines, start, end = extract_caller_block(file_path, line_number)
+
+    pattern_equal = rf"^\s*{re.escape(keyword)}\s*=\s*['\"]{re.escape(current_value)}['\"]\s*$"
+    pattern_colon = rf"^\s*['\"]{re.escape(keyword)}['\"]\s*:\s*['\"]{re.escape(current_value)}['\"]\s*$"
+
+    for i, line in enumerate(lines[start:end + 1], start=start):
+        if ':' in line:
+            if re.search(pattern_colon, line):
+                return file_path, i
+        elif '=' in line:
+            if re.search(pattern_equal, line):
+                return file_path, i
 
 
 def replace_kwarg_value(file_path: Path, line_number: int,
