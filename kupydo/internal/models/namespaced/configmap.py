@@ -13,7 +13,7 @@ from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
-from kupydo.internal import utils
+from kupydo.internal import tools
 
 
 __all__ = ["ConfigMapValues", "ConfigMap"]
@@ -73,6 +73,6 @@ class ConfigMap(KupydoNamespacedModel):
         if files:
             encoded_files = dict()
             for file_name in files:
-                data = utils.read_encode_file(file_name)
+                data = tools.read_encode_file(file_name)
                 encoded_files[file_name] = data
             return encoded_files

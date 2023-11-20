@@ -11,8 +11,6 @@
 import uuid
 import random
 import string
-import base64
-import inspect
 import linecache
 from pathlib import Path
 from dotmap import DotMap
@@ -21,13 +19,21 @@ from typing import Literal, TypeVar, Mapping
 
 
 __all__ = [
+    "get_library_dir",
     "generate_name",
     "extract_tb_line",
     "extract_tb_filepath",
-    "deep_merge"
+    "deep_merge",
+    "create_secret_id",
+    "validate_secret_id"
 ]
 
+
 T = TypeVar('T', bound=Mapping)
+
+
+def get_library_dir() -> Path:
+    return Path(__file__).parent.resolve()
 
 
 def generate_name() -> str:
@@ -75,22 +81,6 @@ def deep_merge(base: T,
         else:
             base[key] = value
     return base
-
-
-def read_encode_file(file_path: Path | str) -> str | None:
-    target = Path(file_path)
-
-    if file_path.startswith('.'):
-        lib_path = Path(__file__).parent
-        for frame_info in inspect.stack():
-            frame_file_path = Path(frame_info.filename)
-            if not frame_file_path.is_relative_to(lib_path):
-                target = frame_file_path.parent / file_path
-                break
-
-    target = target.resolve(strict=True)
-    with target.open('rb') as file:
-        return base64.b64encode(file.read()).decode()
 
 
 def create_secret_id() -> str:
