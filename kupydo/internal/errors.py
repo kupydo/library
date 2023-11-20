@@ -8,11 +8,15 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from pathlib import Path
+
+
 __all__ = [
     "KupydoBaseError",
     "DisabledRegistryError",
     "ResourcesMissingError",
-    "SecretNotFoundError"
+    "SecretNotFoundError",
+    "ForbiddenPlaintextError"
 ]
 
 
@@ -33,7 +37,10 @@ class ResourcesMissingError(KupydoBaseError):
 
 class SecretNotFoundError(KupydoBaseError):
     def __init__(self, sec_id: str):
-        super().__init__(
-            f"Unable to find secret in registry by id: "
-            f"'{sec_id.split(':')[1]}'"
-        )
+        super().__init__(f"Unable to find secret in registry by id: {sec_id}")
+
+
+class ForbiddenPlaintextError(KupydoBaseError):
+    def __init__(self, file_path: Path, line_number: int, secret_value: str):
+        super().__init__(f"Forbidden plaintext value '{secret_value}'\n"
+                         f"on line {line_number} in file '{file_path.name}'.")

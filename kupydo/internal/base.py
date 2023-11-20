@@ -16,11 +16,9 @@ from typing import Type, Any
 from abc import ABC, abstractmethod
 from dotmap import DotMap
 from kupydo.internal import utils
+from .registry import GlobalRegistry
+from .errors import DisabledRegistryError
 from .types import *
-from .registry import (
-    DisabledRegistryError,
-    GlobalRegistry
-)
 
 
 __all__ = [
@@ -64,7 +62,7 @@ class KupydoBaseModel(ABC):
         dump = valids.model_dump(warnings=False)
         self._values = DotMap(dump, _prevent_method_masking=True)
         try:
-            GlobalRegistry.register(type(self), dump)
+            GlobalRegistry.register_template(type(self), dump)
         except DisabledRegistryError:
             pass
 

@@ -9,10 +9,10 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from typing import Type, Any
+from dataclasses import dataclass
+from typing import Callable, Type, Any
 from dotmap import DotMap
 from pathlib import Path
-from kupydo.internal import utils
 from kupydo.internal.errors import *
 
 
@@ -26,52 +26,81 @@ __all__ = [
 _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
 
 
+@dataclass
+class SecretFieldDetails:
+    file_path: Path
+    line_number: int
+    secret_value: str
+
+
 class GlobalRegistry:
     _templates: _ResourceTemplates = list()
+    _plaintext: list[SecretFieldDetails] = list()
     _decrypted: dict[str, str] = dict()
     _enabled: bool = False
 
+    @classmethod
+    def disabled_check(cls, func: Callable) -> Callable:
+        def closure(*args, **kwargs):
+            if not cls._enabled:
+                raise DisabledRegistryError
+            return func(*args, **kwargs)
+        return closure
+
+    @disabled_check
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
-        if not cls._enabled:
-            raise DisabledRegistryError
-        elif not cls._templates:
+        if not cls._templates:
             raise ResourcesMissingError
         return LocalRegistry(cls._templates, namespace)
 
     @classmethod
-    def register(cls, model: Type, values: dict[str, Any]) -> None:
-        if not cls._enabled:
-            raise DisabledRegistryError
-        cls._templates.append((model, values))
-
-    @classmethod
+    @disabled_check
     def load_resources(cls, path: Path) -> None:
-        if not cls._enabled:
-            raise DisabledRegistryError
         cls.reset()
+        print(path)
         #  TODO: import modules with importlib
 
     @classmethod
-    def get_secret(cls, key: str) -> str:
-        if not cls._enabled:
-            raise DisabledRegistryError
-        elif not cls._templates:
-            raise ResourcesMissingError
-        elif key not in cls._decrypted:
-            raise SecretNotFoundError(key)
-        return cls._decrypted[key]
+    @disabled_check
+    def register_template(cls, model: Type, values: dict[str, Any]) -> None:
+        cls._templates.append((model, values))
 
     @classmethod
-    def set_secret(cls, value: str) -> str:
-        if not cls._enabled:
-            raise DisabledRegistryError
-        key = utils.create_secret_id()
-        cls._decrypted[key] = value
-        return key
+    @disabled_check
+    def register_plaintext(cls, file_path: Path, line_number: int, secret_value: str) -> None:
+        cls._plaintext.append(SecretFieldDetails(
+            file_path=file_path,
+            line_number=line_number,
+            secret_value=secret_value
+        ))
 
     @classmethod
+    @disabled_check
+    def register_decrypted(cls, secret_id: str, value: str) -> None:
+        cls._decrypted[secret_id] = value
+
+    @classmethod
+    @disabled_check
+    def get_decrypted_value(cls, secret_id: str) -> str:
+        if secret_id not in cls._decrypted:
+            raise SecretNotFoundError
+        return cls._decrypted[secret_id]
+
+    @classmethod
+    @disabled_check
+    def assert_all_encrypted(cls) -> None:
+        for entry in cls._plaintext:
+            raise ForbiddenPlaintextError(
+                file_path=entry.file_path,
+                line_number=entry.line_number,
+                secret_value=entry.secret_value
+            )
+
+    @classmethod
+    @disabled_check
     def reset(cls) -> None:
         cls._templates = list()
+        cls._plaintext = list()
         cls._decrypted = dict()
 
     @classmethod
