@@ -62,12 +62,12 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def register_template(cls, model: Type, values: dict[str, Any]) -> None:
+    def register_model_template(cls, model: Type, values: dict[str, Any]) -> None:
         cls._templates.append((model, values))
 
     @classmethod
     @disabled_check
-    def register_plaintext(cls, file_path: Path, line_number: int, secret_value: str) -> None:
+    def register_plaintext_secret(cls, file_path: Path, line_number: int, secret_value: str) -> None:
         cls._plaintext.append(SecretFieldDetails(
             file_path=file_path,
             line_number=line_number,
@@ -76,25 +76,22 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def register_decrypted(cls, secret_id: str, value: str) -> None:
+    def register_decrypted_secret(cls, secret_id: str, value: str) -> None:
         cls._decrypted[secret_id] = value
 
     @classmethod
     @disabled_check
-    def get_decrypted_value(cls, secret_id: str) -> str:
-        if secret_id not in cls._decrypted:
+    def pop_plaintext_secret(cls) -> SecretFieldDetails:
+        if len(cls._plaintext) == 0:
             raise SecretNotFoundError
-        return cls._decrypted[secret_id]
+        return cls._plaintext.pop()
 
     @classmethod
     @disabled_check
-    def assert_all_encrypted(cls) -> None:
-        for entry in cls._plaintext:
-            raise ForbiddenPlaintextError(
-                file_path=entry.file_path,
-                line_number=entry.line_number,
-                secret_value=entry.secret_value
-            )
+    def pop_decrypted_secret(cls, secret_id: str) -> str:
+        if secret_id not in cls._decrypted:
+            raise SecretNotFoundError
+        return cls._decrypted.pop(secret_id)
 
     @classmethod
     @disabled_check

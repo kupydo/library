@@ -23,9 +23,9 @@ __all__ = [
     "generate_name",
     "extract_tb_line",
     "extract_tb_filepath",
-    "deep_merge",
     "create_secret_id",
-    "validate_secret_id"
+    "unwrap_secret_id",
+    "deep_merge"
 ]
 
 
@@ -57,6 +57,26 @@ def extract_tb_filepath(tb: TracebackType) -> str:
     return path.as_posix()
 
 
+def create_secret_id() -> str:
+    return f"[ENC_ID:{uuid.uuid4().hex}:ID_END]"
+
+
+def unwrap_secret_id(wsid: str) -> bool | str:
+    if not wsid.startswith("[ENC_ID:"):
+        return False
+    elif not wsid.endswith(":ID_END]"):
+        return False
+    elif wsid.count(':') != 2:
+        return False
+
+    sid = wsid.split(':')[1]
+    if not len(sid) == 32:
+        return False
+    elif any([c not in '0123456789abcdef' for c in sid]):
+        return False
+    return sid
+
+
 def deep_merge(base: T,
                update: dict | DotMap,
                exclude: dict | DotMap,
@@ -81,28 +101,3 @@ def deep_merge(base: T,
         else:
             base[key] = value
     return base
-
-
-def create_secret_id() -> str:
-    return f"[ENC_ID:{uuid.uuid4().hex}:ID_END]"
-
-
-def validate_secret_id(sec_id: str) -> bool:
-    if ':' not in sec_id:
-        return False
-    elif sec_id.count(':') != 2:
-        return False
-
-    prefix, sec_id, suffix = sec_id.split(':')
-    if not prefix == '[ENC_ID':
-        return False
-    elif not suffix == 'ID_END]':
-        return False
-    elif not len(sec_id) == 32:
-        return False
-    elif not all([
-        c in '0123456789abcdef'
-        for c in sec_id
-    ]):
-        return False
-    return True
