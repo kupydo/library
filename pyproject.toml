@@ -7,8 +7,11 @@ repository = "https://github.com/kupydo/library"
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = '*', from = 'kupydo' }
+    { include = "kupydo" }
 ]
+
+[tool.poetry.scripts]
+kupydo = "kupydo.internal.cli.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"
