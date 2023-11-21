@@ -68,7 +68,15 @@ def find_kwarg_line(keyword: str, current_value: str) -> tuple[Path, int]:
     pattern_colon = rf"^\s*['\"]{re.escape(keyword)}['\"]\s*:\s*['\"]{re.escape(current_value)}['\"]\s*$"
 
     for i, line in enumerate(lines[start:end + 1], start=start):
-        if ':' in line:
+        if ':' in line and '=' in line:
+            pattern = (
+                pattern_equal if
+                line.index('=') < line.index(':')
+                else pattern_colon
+            )
+            if re.search(pattern, line):
+                return file_path, i
+        elif ':' in line:
             if re.search(pattern_colon, line):
                 return file_path, i
         elif '=' in line:
