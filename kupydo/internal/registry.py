@@ -17,6 +17,7 @@ from kupydo.internal.errors import *
 
 
 __all__ = [
+    "SecretFieldDetails",
     "GlobalRegistry",
     "LocalRegistry",
     "DynamicTypeRegistry"
@@ -30,6 +31,8 @@ _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
 class SecretFieldDetails:
     file_path: Path
     line_number: int
+    field_key: str
+    field_value: str
     secret_value: str
 
 
@@ -37,20 +40,19 @@ class GlobalRegistry:
     _templates: _ResourceTemplates = list()
     _plaintext: list[SecretFieldDetails] = list()
     _decrypted: dict[str, str] = dict()
-    _silenced: bool = False
     _enabled: bool = False
 
-    @classmethod
-    def disabled_check(cls, func: Callable) -> Callable:
-        def closure(*args, **kwargs):
-            if not cls._enabled and not cls._silenced:
+    @staticmethod
+    def disabled_check(func: Callable) -> Callable:
+        def closure(cls, *args, **kwargs):
+            if not cls._enabled:
                 raise DisabledRegistryError
-            return func(*args, **kwargs)
+            return func(cls, *args, **kwargs)
         return closure
 
     @disabled_check
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
-        if not cls._templates and not cls._silenced:
+        if not cls._templates:
             raise ResourcesMissingError
         return LocalRegistry(cls._templates, namespace)
 
@@ -68,12 +70,8 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def register_plaintext_secret(cls, file_path: Path, line_number: int, secret_value: str) -> None:
-        cls._plaintext.append(SecretFieldDetails(
-            file_path=file_path,
-            line_number=line_number,
-            secret_value=secret_value
-        ))
+    def register_plaintext_secret(cls, sfd: SecretFieldDetails) -> None:
+        cls._plaintext.append(sfd)
 
     @classmethod
     @disabled_check
@@ -82,19 +80,15 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def pop_plaintext_secret(cls) -> SecretFieldDetails | None:
+    def pop_plaintext_secret(cls) -> SecretFieldDetails:
         if len(cls._plaintext) == 0:
-            if cls._silenced:
-                return None
             raise SecretNotFoundError
         return cls._plaintext.pop()
 
     @classmethod
     @disabled_check
-    def pop_decrypted_secret(cls, secret_id: str) -> str | None:
+    def pop_decrypted_secret(cls, secret_id: str) -> str:
         if secret_id not in cls._decrypted:
-            if cls._silenced:
-                return None
             raise SecretNotFoundError
         return cls._decrypted.pop(secret_id)
 
@@ -106,16 +100,8 @@ class GlobalRegistry:
         cls._decrypted = dict()
 
     @classmethod
-    def set_silenced(cls, *, state: bool) -> None:
-        cls._silenced = state
-
-    @classmethod
     def set_enabled(cls, *, state: bool) -> None:
         cls._enabled = state
-
-    @classmethod
-    def is_silenced(cls) -> bool:
-        return cls._silenced
 
     @classmethod
     def is_enabled(cls) -> bool:
