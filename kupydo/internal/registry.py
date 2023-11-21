@@ -37,19 +37,20 @@ class GlobalRegistry:
     _templates: _ResourceTemplates = list()
     _plaintext: list[SecretFieldDetails] = list()
     _decrypted: dict[str, str] = dict()
+    _silenced: bool = False
     _enabled: bool = False
 
     @classmethod
     def disabled_check(cls, func: Callable) -> Callable:
         def closure(*args, **kwargs):
-            if not cls._enabled:
+            if not cls._enabled and not cls._silenced:
                 raise DisabledRegistryError
             return func(*args, **kwargs)
         return closure
 
     @disabled_check
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
-        if not cls._templates:
+        if not cls._templates and not cls._silenced:
             raise ResourcesMissingError
         return LocalRegistry(cls._templates, namespace)
 
@@ -81,15 +82,19 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def pop_plaintext_secret(cls) -> SecretFieldDetails:
+    def pop_plaintext_secret(cls) -> SecretFieldDetails | None:
         if len(cls._plaintext) == 0:
+            if cls._silenced:
+                return None
             raise SecretNotFoundError
         return cls._plaintext.pop()
 
     @classmethod
     @disabled_check
-    def pop_decrypted_secret(cls, secret_id: str) -> str:
+    def pop_decrypted_secret(cls, secret_id: str) -> str | None:
         if secret_id not in cls._decrypted:
+            if cls._silenced:
+                return None
             raise SecretNotFoundError
         return cls._decrypted.pop(secret_id)
 
@@ -101,12 +106,20 @@ class GlobalRegistry:
         cls._decrypted = dict()
 
     @classmethod
-    def enable(cls):
-        cls._enabled = True
+    def set_silenced(cls, *, state: bool) -> None:
+        cls._silenced = state
 
     @classmethod
-    def disable(cls):
-        cls._enabled = False
+    def set_enabled(cls, *, state: bool) -> None:
+        cls._enabled = state
+
+    @classmethod
+    def is_silenced(cls) -> bool:
+        return cls._silenced
+
+    @classmethod
+    def is_enabled(cls) -> bool:
+        return cls._enabled
 
 
 class LocalRegistry(list):
