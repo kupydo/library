@@ -12,13 +12,12 @@ from __future__ import annotations as anno
 import orjson
 import base64
 from typing import Type
-from pathlib import Path
 from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.registry import *
-from kupydo.internal.errors import *
 from kupydo.internal.types import *
 from kupydo.internal.base import *
+from kupydo.internal import tools
 from kupydo.internal import utils
 
 
@@ -85,6 +84,25 @@ class BaseSecret(KupydoNamespacedModel):
             patch=api.patch_namespaced_secret
         )
 
+    @staticmethod
+    def _resolve_secret(key: str, value: str, from_file: bool = False) -> str:
+        if sid := utils.unwrap_secret_id(value):
+            return GlobalRegistry.pop_decrypted_secret(sid)
+
+        file_path, line_number = tools.find_kwarg_line(key, value)
+        secret = tools.read_encode_file(value) if from_file else value
+
+        if GlobalRegistry.is_enabled():
+            sfd = SecretFieldDetails(
+                file_path=file_path,
+                line_number=line_number,
+                field_key=key,
+                field_value=value,
+                secret_value=secret
+            )
+            GlobalRegistry.register_plaintext_secret(sfd)
+        return secret
+
 
 class OpaqueSecret(BaseSecret):
     def __init__(self,
@@ -96,6 +114,9 @@ class OpaqueSecret(BaseSecret):
                  immutable: OptionalBool = None,
                  string_data: OptionalDictStr = None
                  ) -> None:
+        if string_data:
+            for k, v in string_data.items():
+                string_data[k] = self._resolve_secret(k, v)
         super().__init__(
             name=name,
             namespace=namespace,
@@ -126,8 +147,8 @@ class BasicAuthSecret(BaseSecret):
             immutable=immutable,
             subtype="kubernetes.io/basic-auth",
             string_data=dict(
-                username=username,
-                password=password
+                username=self._resolve_secret("username", username),
+                password=self._resolve_secret("password", password)
             )
         )
 
@@ -152,7 +173,9 @@ class DockerSecret(BaseSecret):
             immutable=immutable,
             subtype="kubernetes.io/dockerconfigjson",
             data=self._create_dockerconfigjson(
-                registry, username, password
+                registry=self._resolve_secret("registry", registry),
+                username=self._resolve_secret("username", username),
+                password=self._resolve_secret("password", password)
             )
         )
 
@@ -191,20 +214,12 @@ class SSHSecret(BaseSecret):
             labels=labels,
             immutable=immutable,
             subtype="kubernetes.io/ssh-auth",
-            data=self._create_ssh_auth(keyfile)
+            data={
+                "ssh-privatekey": self._resolve_secret(
+                    "keyfile", keyfile, from_file=True
+                )
+            }
         )
-
-    @staticmethod
-    def _create_ssh_auth(keyfile: Path | str) -> dict:
-        try:
-            key_value = GlobalRegistry.get_secret(keyfile)
-        except KupydoBaseError:
-            key_value = utils.read_encode_file(keyfile)
-            try:
-                GlobalRegistry.set_secret(key_value)
-            except KupydoBaseError:
-                pass
-        return {"ssh-privatekey": key_value}
 
 
 class TLSSecret(BaseSecret):
@@ -225,35 +240,24 @@ class TLSSecret(BaseSecret):
             labels=labels,
             immutable=immutable,
             subtype="kubernetes.io/tls",
-            data=self._create_tls_auth(certfile, keyfile)
+            data={
+                "tls.crt": self._resolve_secret(
+                    "certfile", certfile, from_file=True
+                ),
+                "tls.key": self._resolve_secret(
+                    "keyfile", keyfile, from_file=True
+                )
+            }
         )
-
-    @staticmethod
-    def _create_tls_auth(certfile: Path | str, keyfile: Path | str) -> dict:
-        try:
-            cert_value = GlobalRegistry.get_secret(certfile)
-            key_value = GlobalRegistry.get_secret(keyfile)
-        except KupydoBaseError:
-            cert_value = utils.read_encode_file(certfile)
-            key_value = utils.read_encode_file(keyfile)
-            try:
-                GlobalRegistry.set_secret(cert_value)
-                GlobalRegistry.set_secret(key_value)
-            except KupydoBaseError:
-                pass
-        return {
-            "tls.crt": cert_value,
-            "tls.key": key_value
-        }
 
 
 class Secret:
     """
     A collection of BaseSecret subclasses.
     """
+    BasicAuth: Type[BasicAuthSecret] = BasicAuthSecret
     Opaque: Type[OpaqueSecret] = OpaqueSecret
     Docker: Type[DockerSecret] = DockerSecret
-    Auth: Type[BasicAuthSecret] = BasicAuthSecret
     SSH: Type[SSHSecret] = SSHSecret
     TLS: Type[TLSSecret] = TLSSecret
 
