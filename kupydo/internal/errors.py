@@ -36,8 +36,9 @@ class ResourcesMissingError(KupydoBaseError):
 
 
 class SecretNotFoundError(KupydoBaseError):
-    def __init__(self, sec_id: str):
-        super().__init__(f"Unable to find secret in registry by id: {sec_id}")
+    def __init__(self, sec_id: str = None):
+        a, b, c = (['any ', 's', '.'] if sec_id is None else ['', '', f" by id: '{sec_id}'"])
+        super().__init__("Unable to find {0}secret{1} in registry{2}".format(a, b, c))
 
 
 class ForbiddenPlaintextError(KupydoBaseError):

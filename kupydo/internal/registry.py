@@ -80,16 +80,16 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def pop_plaintext_secret(cls) -> SecretFieldDetails:
+    def get_all_plaintext_secrets(cls) -> list[SecretFieldDetails]:
         if len(cls._plaintext) == 0:
             raise SecretNotFoundError
-        return cls._plaintext.pop()
+        return cls._plaintext
 
     @classmethod
     @disabled_check
     def pop_decrypted_secret(cls, secret_id: str) -> str:
         if secret_id not in cls._decrypted:
-            raise SecretNotFoundError
+            raise SecretNotFoundError(secret_id)
         return cls._decrypted.pop(secret_id)
 
     @classmethod
