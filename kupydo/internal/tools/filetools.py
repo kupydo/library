@@ -11,6 +11,7 @@
 import re
 import base64
 import inspect
+import functools
 from pathlib import Path
 from kupydo.internal import utils
 
@@ -34,7 +35,7 @@ def first_external_caller() -> tuple[Path, int]:
             return frame_file_path, frame_info.lineno
 
 
-def read_encode_file(file_path: Path | str) -> str | None:
+def read_encode_file(file_path: Path | str) -> str:
     target = Path(file_path)
 
     if file_path.startswith('.'):
@@ -46,10 +47,14 @@ def read_encode_file(file_path: Path | str) -> str | None:
         return base64.b64encode(file.read()).decode()
 
 
-def extract_caller_block(file_path: Path, line_number: int) -> tuple[list[str], int, int]:
+@functools.cache
+def read_cached_file_lines(file_path: Path) -> list[str]:
     with open(file_path, 'r') as file:
-        lines = file.readlines()
+        return file.readlines()
 
+
+def extract_caller_block(file_path: Path, line_number: int) -> tuple[list[str], int, int]:
+    lines = read_cached_file_lines(file_path)
     open_parentheses = 0
     start = line_number - 1
 
@@ -64,8 +69,8 @@ def find_kwarg_line(keyword: str, current_value: str) -> tuple[Path, int]:
     file_path, line_number = first_external_caller()
     lines, start, end = extract_caller_block(file_path, line_number)
 
-    pattern_equal = rf"^\s*{re.escape(keyword)}\s*=\s*['\"]{re.escape(current_value)}['\"]\s*$"
-    pattern_colon = rf"^\s*['\"]{re.escape(keyword)}['\"]\s*:\s*['\"]{re.escape(current_value)}['\"]\s*$"
+    pattern_equal = rf"^\s*{re.escape(keyword)}\s*=\s*['\"]{re.escape(current_value)}['\"].*\s*$"
+    pattern_colon = rf"^\s*['\"]{re.escape(keyword)}['\"]\s*:\s*['\"]{re.escape(current_value)}['\"].*\s*$"
 
     for i, line in enumerate(lines[start:end + 1], start=start):
         if ':' in line and '=' in line:
