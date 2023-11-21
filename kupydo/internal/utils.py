@@ -58,21 +58,23 @@ def extract_tb_filepath(tb: TracebackType) -> str:
 
 
 def create_secret_id() -> str:
-    return f"[ENC_ID:{uuid.uuid4().hex}:ID_END]"
+    return f"[ENC_ID>{uuid.uuid4().hex}<ID_END]"
 
 
 def unwrap_secret_id(wsid: str) -> bool | str:
-    if not wsid.startswith("[ENC_ID:"):
+    if not wsid.startswith("[ENC_ID>"):
         return False
-    elif not wsid.endswith(":ID_END]"):
+    elif not wsid.endswith("<ID_END]"):
         return False
-    elif wsid.count(':') != 2:
+    elif any([wsid.count(c) != 1 for c in "<>"]):
         return False
 
-    sid = wsid.split(':')[1]
+    sid = wsid.split('>')[1].split('<')[0]
+    valids = '0123456789abcdef'
+
     if not len(sid) == 32:
         return False
-    elif any([c not in '0123456789abcdef' for c in sid]):
+    elif any([c not in valids for c in sid]):
         return False
     return sid
 
