@@ -59,9 +59,9 @@ def exclude():
     )
 
 
-@pytest.fixture
-def patch_expected():
-    return DotMap(
+def test_deep_merge_patch(base, update, exclude):
+    result = utils.deep_merge(base, update, exclude, method='patch')
+    assert result == DotMap(
         name="aaaaa",
         namespace="bbbbb",
         labels=DotMap(
@@ -78,12 +78,12 @@ def patch_expected():
             thirdData="kkkkk"
         ),
         immutable=True
-    )
+    ), "deep merge patch result does not equal the expected model"
 
 
-@pytest.fixture
-def replace_expected():
-    return DotMap(
+def test_deep_merge_replace(base, update, exclude):
+    result = utils.deep_merge(base, update, exclude, method='replace')
+    assert result == DotMap(
         name="aaaaa",
         namespace="bbbbb",
         labels=DotMap(
@@ -95,14 +95,4 @@ def replace_expected():
             thirdData="kkkkk"
         ),
         immutable=None
-    )
-
-
-def test_deep_merge_patch(base, update, exclude, patch_expected):
-    result = utils.deep_merge(base, update, exclude, method='patch')
-    assert result == patch_expected
-
-
-def test_deep_merge_replace(base, update, exclude, replace_expected):
-    result = utils.deep_merge(base, update, exclude, method='replace')
-    assert result == replace_expected
+    ), "deep merge replace result does not equal the expected model"
