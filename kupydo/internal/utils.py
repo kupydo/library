@@ -68,12 +68,14 @@ def get_sid_delimiters() -> tuple[str, str]:
     return "[ENC_ID>", "<ID_END]"
 
 
-def validate_sid(sid: str) -> str | None:
-    prefix, suffix, = get_sid_delimiters()
-    if sid.startswith(prefix):
-        sid = sid.lstrip(prefix)
-    if sid.endswith(suffix):
-        sid = sid.rstrip(suffix)
+def validate_sid(sid: str, check_delimiters: bool = True) -> str | None:
+    if check_delimiters:
+        prefix, suffix, = get_sid_delimiters()
+        if not sid.startswith(prefix):
+            return None
+        elif not sid.endswith(suffix):
+            return None
+        sid = sid.lstrip(prefix).rstrip(suffix)
 
     if not len(sid) == 32:
         return None
@@ -83,7 +85,7 @@ def validate_sid(sid: str) -> str | None:
 
 
 def wrap_sid(unwrapped_sid: str) -> str | None:
-    if validate_sid(unwrapped_sid):
+    if validate_sid(unwrapped_sid, check_delimiters=False):
         prefix, suffix = get_sid_delimiters()
         return f"{prefix}{unwrapped_sid}{suffix}"
 
