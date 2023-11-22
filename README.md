@@ -1,2 +1,2 @@
 # library
-Python Library for Simplified Kubernetes Operations
+KUPYDO - Kubernetes Pythonic Deployment Operator

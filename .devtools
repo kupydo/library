@@ -19,9 +19,9 @@
     "components": [
       {
         "name": "source",
-        "target": "src",
+        "target": "kupydo",
         "ignore": [],
-        "hash": "786a02f742015903c6c6fd852552d272"
+        "hash": "57b856d5a080a01321af4a9725f110a5"
       }
     ],
     "only_config": false
