@@ -23,8 +23,11 @@ __all__ = [
     "generate_name",
     "extract_tb_line",
     "extract_tb_filepath",
-    "create_secret_id",
-    "unwrap_secret_id",
+    "generate_sid",
+    "get_sid_delimiters",
+    "validate_sid",
+    "wrap_sid",
+    "unwrap_sid",
     "deep_merge"
 ]
 
@@ -57,26 +60,37 @@ def extract_tb_filepath(tb: TracebackType) -> str:
     return path.as_posix()
 
 
-def create_secret_id() -> str:
-    return f"[ENC_ID>{uuid.uuid4().hex}<ID_END]"
+def generate_sid() -> str:
+    return uuid.uuid4().hex
 
 
-def unwrap_secret_id(wsid: str) -> bool | str:
-    if not wsid.startswith("[ENC_ID>"):
-        return False
-    elif not wsid.endswith("<ID_END]"):
-        return False
-    elif any([wsid.count(c) != 1 for c in "<>"]):
-        return False
+def get_sid_delimiters() -> tuple[str, str]:
+    return "[ENC_ID>", "<ID_END]"
 
-    sid = wsid.split('>')[1].split('<')[0]
-    valids = '0123456789abcdef'
+
+def validate_sid(sid: str) -> str | None:
+    prefix, suffix, = get_sid_delimiters()
+    if sid.startswith(prefix):
+        sid = sid.lstrip(prefix)
+    if sid.endswith(suffix):
+        sid = sid.rstrip(suffix)
 
     if not len(sid) == 32:
-        return False
-    elif any([c not in valids for c in sid]):
-        return False
+        return None
+    elif not all([c in '0123456789abcdef' for c in sid]):
+        return None
     return sid
+
+
+def wrap_sid(unwrapped_sid: str) -> str | None:
+    if validate_sid(unwrapped_sid):
+        prefix, suffix = get_sid_delimiters()
+        return f"{prefix}{unwrapped_sid}{suffix}"
+
+
+def unwrap_sid(wrapped_sid: str) -> str | None:
+    if unwrapped_sid := validate_sid(wrapped_sid):
+        return unwrapped_sid
 
 
 def deep_merge(base: T,
