@@ -62,7 +62,7 @@ class KupydoBaseModel(ABC):
         dump = valids.model_dump(warnings=False)
         self._values = DotMap(dump, _prevent_method_masking=True)
         try:
-            GlobalRegistry.register_model_template(type(self), dump)
+            GlobalRegistry.register_template(type(self), dump)
         except DisabledRegistryError:
             pass
 

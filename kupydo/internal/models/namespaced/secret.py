@@ -86,8 +86,9 @@ class BaseSecret(KupydoNamespacedModel):
 
     @staticmethod
     def _resolve_secret(key: str, value: str, from_file: bool = False) -> str:
-        if sid := utils.unwrap_secret_id(value):
-            return GlobalRegistry.pop_decrypted_secret(sid)
+        if sid := utils.unwrap_sid(value):
+            secret = GlobalRegistry.get_secret(sid)
+            return secret.secret_value
 
         file_path, line_number = tools.find_kwarg_line(key, value)
         secret = tools.read_encode_file(value) if from_file else value
@@ -98,9 +99,10 @@ class BaseSecret(KupydoNamespacedModel):
                 line_number=line_number,
                 field_key=key,
                 field_value=value,
-                secret_value=secret
+                secret_value=secret,
+                identifier=utils.generate_sid()
             )
-            GlobalRegistry.register_plaintext_secret(sfd)
+            GlobalRegistry.register_secret(sfd)
         return secret
 
 
@@ -216,8 +218,7 @@ class SSHSecret(BaseSecret):
             subtype="kubernetes.io/ssh-auth",
             data={
                 "ssh-privatekey": self._resolve_secret(
-                    "keyfile", keyfile, from_file=True
-                )
+                    "keyfile", keyfile, from_file=True)
             }
         )
 
@@ -242,11 +243,9 @@ class TLSSecret(BaseSecret):
             subtype="kubernetes.io/tls",
             data={
                 "tls.crt": self._resolve_secret(
-                    "certfile", certfile, from_file=True
-                ),
+                    "certfile", certfile, from_file=True),
                 "tls.key": self._resolve_secret(
-                    "keyfile", keyfile, from_file=True
-                )
+                    "keyfile", keyfile, from_file=True)
             }
         )
 

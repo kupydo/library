@@ -34,12 +34,12 @@ class SecretFieldDetails:
     field_key: str
     field_value: str
     secret_value: str
+    identifier: str
 
 
 class GlobalRegistry:
     _templates: _ResourceTemplates = list()
-    _plaintext: list[SecretFieldDetails] = list()
-    _decrypted: dict[str, str] = dict()
+    _secrets: dict[str, SecretFieldDetails] = dict()
     _enabled: bool = False
 
     @staticmethod
@@ -65,39 +65,33 @@ class GlobalRegistry:
 
     @classmethod
     @disabled_check
-    def register_model_template(cls, model: Type, values: dict[str, Any]) -> None:
+    def register_template(cls, model: Type, values: dict[str, Any]) -> None:
         cls._templates.append((model, values))
 
     @classmethod
     @disabled_check
-    def register_plaintext_secret(cls, sfd: SecretFieldDetails) -> None:
-        cls._plaintext.append(sfd)
+    def register_secret(cls, sfd: SecretFieldDetails) -> None:
+        cls._secrets[sfd.identifier] = sfd
 
     @classmethod
     @disabled_check
-    def register_decrypted_secret(cls, secret_id: str, value: str) -> None:
-        cls._decrypted[secret_id] = value
-
-    @classmethod
-    @disabled_check
-    def get_all_plaintext_secrets(cls) -> list[SecretFieldDetails]:
-        if len(cls._plaintext) == 0:
+    def get_all_secrets(cls) -> list[SecretFieldDetails]:
+        if len(cls._secrets) == 0:
             raise SecretNotFoundError
-        return cls._plaintext
+        return list(cls._secrets.values())
 
     @classmethod
     @disabled_check
-    def pop_decrypted_secret(cls, secret_id: str) -> str:
-        if secret_id not in cls._decrypted:
+    def get_secret(cls, secret_id: str) -> SecretFieldDetails:
+        if secret_id not in cls._secrets:
             raise SecretNotFoundError(secret_id)
-        return cls._decrypted.pop(secret_id)
+        return cls._secrets.get(secret_id)
 
     @classmethod
     @disabled_check
     def reset(cls) -> None:
         cls._templates = list()
-        cls._plaintext = list()
-        cls._decrypted = dict()
+        cls._secrets = dict()
 
     @classmethod
     def set_enabled(cls, *, state: bool) -> None:
