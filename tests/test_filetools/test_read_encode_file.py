@@ -17,55 +17,53 @@ from pathlib import Path
 
 
 @pytest.fixture
-def script() -> str:
-	pkgs = site.getsitepackages()
-	lib = Path(__file__).parents[2].as_posix()
-	pkgs.append(lib)
-	return textwrap.dedent(f'''
-		import sys
-		for path in {pkgs}:
-			sys.path.append(path)
+def script(tmp_path) -> callable:
+	def closure(from_relative: bool = False) -> str:
+		pkgs = site.getsitepackages()
+		lib = Path(__file__).parents[2].as_posix()
+		pkgs.append(lib)
 
-		from kupydo.internal import tools
+		data_path = tmp_path / "test_data.py"
+		script_path = tmp_path / "test_script.py"
 
-		def caller():
-			with open("{{file_write_path}}", "w") as f:
-				f.write("{{data_to_write}}")
-			encoded = tools.read_encode_file("{{file_read_path}}")
-			print(encoded)
+		script = textwrap.dedent(f'''
+			import sys
+			for path in {pkgs}:
+				sys.path.append(path)
+	
+			from kupydo.internal import tools
+	
+			def caller():
+				encoded = tools.read_encode_file("{
+					"./test_data.py" 
+					if from_relative else 
+					data_path.as_posix()
+				}")
+				print(encoded)
+	
+			caller()
+		''')
+		data_path.write_text("Hello World")
+		script_path.write_text(script)
+		result = subprocess.run(
+			['python', script_path],
+			capture_output=True,
+			text=True
+		)
+		return result.stdout.strip()
+	return closure
 
-		caller()
-	''')
+
+@pytest.fixture
+def expected_output():
+	return base64.b64encode("Hello World".encode()).decode()
 
 
-def test_absolute_file_path(script, tmp_path):
-	test_script = tmp_path / "test_script.py"
-	data_path = (tmp_path / "test_data.py").as_posix()
-	test_script.write_text(script.format(
-		file_write_path=data_path,
-		file_read_path=data_path,
-		data_to_write="Hello World"
-	))
-
-	result = subprocess.run(['python', test_script], capture_output=True, text=True)
-	output = result.stdout.strip()
-
-	expected_output = base64.b64encode("Hello World".encode()).decode()
-	assert output == expected_output, \
+def test_absolute_file_path(script, expected_output):
+	assert script() == expected_output, \
 		"The output should be the base64 encoded string of 'Hello World'"
 
 
-def test_relative_file_path(script, tmp_path):
-	test_script = tmp_path / "test_script.py"
-	test_script.write_text(script.format(
-		file_write_path=(tmp_path / "test_data.py").as_posix(),
-		file_read_path="./test_data.py",
-		data_to_write="Hello World"
-	))
-
-	result = subprocess.run(['python', test_script], capture_output=True, text=True)
-	output = result.stdout.strip()
-
-	expected_output = base64.b64encode("Hello World".encode()).decode()
-	assert output == expected_output, \
+def test_relative_file_path(script, expected_output):
+	assert script(from_relative=True) == expected_output, \
 		"The output should be the base64 encoded string of 'Hello World'"
