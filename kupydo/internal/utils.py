@@ -121,7 +121,7 @@ def deep_merge(base: T,
     return base
 
 
-def separate_kwarg_line(line: str) -> tuple[str, str, str] | None:
+def separate_kwarg_line(line: str) -> DotMap | None:
     separator = None
     if ':' in line and '=' in line:
         separator = '=' if line.index('=') < line.index(':') else ':'
@@ -134,5 +134,9 @@ def separate_kwarg_line(line: str) -> tuple[str, str, str] | None:
         keyword, value = line.split(separator, 1)
         if not keyword or not value:
             return None
-        return keyword, separator, value
+        return DotMap(
+            keyword=keyword,
+            separator=separator,
+            value=value
+        )
     return None

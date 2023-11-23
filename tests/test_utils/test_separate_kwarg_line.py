@@ -8,47 +8,72 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from dotmap import DotMap
 from kupydo.internal import utils
 
 
 def test_line_with_equal_separator():
 	line = 'key="value"'
-	expected_output = ("key", "=", '"value"')
+	expected_output = DotMap(
+		keyword="key",
+		separator="=",
+		value='"value"'
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should correctly separate line using '=' as separator"
 
 
 def test_line_with_colon_separator():
 	line = "'key' : 'value'"
-	expected_output = ("'key' ", ":", " 'value'")
+	expected_output = DotMap(
+		keyword="'key' ",
+		separator=":",
+		value=" 'value'"
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should correctly separate line using ':' as separator"
 
 
 def test_line_with_both_separators_equal_first():
 	line = "key=value:other"
-	expected_output = ("key", "=", "value:other")
+	expected_output = DotMap(
+		keyword="key",
+		separator="=",
+		value="value:other"
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should prioritize '=' as separator when it appears before ':'"
 
 
 def test_line_with_both_separators_colon_first():
 	line = "key:value=other"
-	expected_output = ("key", ":", "value=other")
+	expected_output = DotMap(
+		keyword="key",
+		separator=":",
+		value="value=other"
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should prioritize ':' as separator when it appears before '='"
 
 
 def test_line_with_double_equal_separators():
 	line = "key=value=extra"
-	expected_output = ("key", "=", "value=extra")
+	expected_output = DotMap(
+		keyword="key",
+		separator="=",
+		value="value=extra"
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should correctly handle line with double '=' separators, splitting at the first one"
 
 
 def test_line_with_double_colon_separators():
 	line = "key:value:extra"
-	expected_output = ("key", ":", "value:extra")
+	expected_output = DotMap(
+		keyword="key",
+		separator=":",
+		value="value:extra"
+	)
 	assert utils.separate_kwarg_line(line) == expected_output, \
 		"Should correctly handle line with double ':' separators, splitting at the first one"
 
