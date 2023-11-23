@@ -119,3 +119,20 @@ def deep_merge(base: T,
         else:
             base[key] = value
     return base
+
+
+def separate_kwarg_line(line: str) -> tuple[str, str, str] | None:
+    separator = None
+    if ':' in line and '=' in line:
+        separator = '=' if line.index('=') < line.index(':') else ':'
+    elif ':' in line:
+        separator = ':'
+    elif '=' in line:
+        separator = '='
+
+    if separator:
+        keyword, value = line.split(separator, 1)
+        if not keyword or not value:
+            return None
+        return keyword, separator, value
+    return None
