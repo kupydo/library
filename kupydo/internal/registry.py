@@ -31,7 +31,7 @@ _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
 class SecretFieldDetails:
     file_path: Path
     line_number: int
-    field_key: str
+    field_keyword: str
     field_value: str
     secret_value: str
     identifier: str

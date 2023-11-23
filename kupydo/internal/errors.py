@@ -16,7 +16,9 @@ __all__ = [
     "DisabledRegistryError",
     "ResourcesMissingError",
     "SecretNotFoundError",
-    "ForbiddenPlaintextError"
+    "KwargNotFoundError",
+    "ForbiddenPlaintextError",
+    "InvalidPackageError"
 ]
 
 
@@ -41,7 +43,20 @@ class SecretNotFoundError(KupydoBaseError):
         super().__init__("Unable to find {0}secret{1} in registry{2}".format(a, b, c))
 
 
+class KwargNotFoundError(KupydoBaseError):
+    def __init__(self, keyword: str, value: str):
+        super().__init__(f"Unable to find kwarg in file for keyword '{keyword}' and value '{value}'")
+
+
 class ForbiddenPlaintextError(KupydoBaseError):
     def __init__(self, file_path: Path, line_number: int, secret_value: str):
         super().__init__(f"Forbidden plaintext value '{secret_value}'\n"
                          f"on line {line_number} in file '{file_path.name}'.")
+
+
+class InvalidPackageError(KupydoBaseError):
+    def __init__(self):
+        super().__init__(
+            "\nCannot display package info with invalid package data."
+            "\nPlease try to re-install kupydo to resolve this issue."
+        )
