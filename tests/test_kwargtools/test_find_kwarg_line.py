@@ -29,7 +29,6 @@ def script() -> callable:
 
 			from kupydo.models import Secret
 			from kupydo.internal import tools
-			from kupydo.internal import errors
 
 			auth = Secret.BasicAuth(
 				username="{username}",
@@ -41,7 +40,7 @@ def script() -> callable:
 	return closure
 
 
-def test_absolute_file_path(tmp_path, script):
+def test_absolute_file_path(tmp_path: Path, script: callable):
 	username = "asdfg"
 	password = "qwerty"
 

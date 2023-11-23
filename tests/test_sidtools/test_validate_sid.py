@@ -8,7 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from kupydo.internal import utils
+from kupydo.internal import tools
 
 
 VALID_SID = "1234567890abcdef1234567890abcdef"
@@ -18,39 +18,39 @@ INVALID_SID_LENGTH = "12345678"
 
 def test_with_valid_sid():
 	wrapped_valid_sid = f"[ENC_ID>{VALID_SID}<ID_END]"
-	assert utils.validate_sid(wrapped_valid_sid) == VALID_SID, \
+	assert tools.validate_sid(wrapped_valid_sid) == VALID_SID, \
 		"Failed to validate a wrapped valid SID"
 
 
 def test_with_invalid_sid_length():
 	wrapped_invalid_sid = f"[ENC_ID>{INVALID_SID_LENGTH}<ID_END]"
-	assert utils.validate_sid(wrapped_invalid_sid) is None, \
+	assert tools.validate_sid(wrapped_invalid_sid) is None, \
 		"Incorrectly validated a wrapped SID with invalid length"
 
 
 def test_with_invalid_sid_characters():
 	wrapped_invalid_char_sid = f"[ENC_ID>{INVALID_SID_CHARACTERS}<ID_END]"
-	assert utils.validate_sid(wrapped_invalid_char_sid) is None, \
+	assert tools.validate_sid(wrapped_invalid_char_sid) is None, \
 		"Incorrectly validated a wrapped SID with invalid characters"
 
 
 def test_without_checking_delimiters_valid_sid():
-	assert utils.validate_sid(VALID_SID, check_delimiters=False) == VALID_SID, \
+	assert tools.validate_sid(VALID_SID, check_delimiters=False) == VALID_SID, \
 		"Failed to validate a valid SID without checking delimiters"
 
 
 def test_without_checking_delimiters_invalid_sid():
-	assert utils.validate_sid(INVALID_SID_LENGTH, check_delimiters=False) is None, \
+	assert tools.validate_sid(INVALID_SID_LENGTH, check_delimiters=False) is None, \
 		"Incorrectly validated an invalid SID without checking delimiters"
 
 
 def test_with_missing_prefix_delimiter():
 	missing_prefix_delimiter = f"{VALID_SID}<ID_END]"
-	assert utils.validate_sid(missing_prefix_delimiter) is None, \
+	assert tools.validate_sid(missing_prefix_delimiter) is None, \
 		"Incorrectly validated a SID missing the prefix delimiter"
 
 
 def test_with_missing_suffix_delimiter():
 	missing_suffix_delimiter = f"[ENC_ID>{VALID_SID}"
-	assert utils.validate_sid(missing_suffix_delimiter) is None, \
+	assert tools.validate_sid(missing_suffix_delimiter) is None, \
 		"Incorrectly validated a SID missing the suffix delimiter"

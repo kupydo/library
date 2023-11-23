@@ -25,10 +25,10 @@ def script() -> str:
 		for path in {pkgs}:
 			sys.path.append(path)
 		
-		from kupydo.internal import tools
+		from kupydo.internal import utils
 		
 		def caller():
-			print(tools.first_external_caller())
+			print(utils.first_external_caller())
 		
 		caller()
 	''')

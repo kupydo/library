@@ -8,28 +8,28 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from kupydo.internal import utils
+from kupydo.internal import tools
 
 
 def test_valid_sid():
 	valid_sid = "1234567890abcdef1234567890abcdef"
 	expected_output = f"[ENC_ID>{valid_sid}<ID_END]"
-	assert utils.wrap_sid(valid_sid) == expected_output, \
+	assert tools.wrap_sid(valid_sid) == expected_output, \
 		"wrap_sid should correctly wrap a valid SID"
 
 
 def test_invalid_length():
 	invalid_sid_length = "12345"
-	assert utils.wrap_sid(invalid_sid_length) is None, \
+	assert tools.wrap_sid(invalid_sid_length) is None, \
 		"wrap_sid should return None for SIDs with incorrect length"
 
 
 def test_invalid_characters():
 	invalid_sid_characters = "1234567890abcdeg" * 2
-	assert utils.wrap_sid(invalid_sid_characters) is None, \
+	assert tools.wrap_sid(invalid_sid_characters) is None, \
 		"wrap_sid should return None for SIDs with invalid characters"
 
 
 def test_empty_string():
-	assert utils.wrap_sid('') is None, \
+	assert tools.wrap_sid('') is None, \
 		"wrap_sid should return None for an empty string"
