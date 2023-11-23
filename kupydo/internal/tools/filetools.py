@@ -8,38 +8,28 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-import re
 import base64
-import inspect
 import functools
 from pathlib import Path
+from collections import defaultdict
 from kupydo.internal import utils
+from kupydo.internal.registry import *
+from .kwargtools import *
+from .sidtools import *
 
 
 __all__ = [
-    "first_external_caller",
     "read_encode_file",
-    "extract_caller_block",
-    "find_kwarg_line",
-    "replace_kwarg_value"
+    "read_cached_file_lines",
+    "switch_file_secret_values"
 ]
-
-
-def first_external_caller() -> tuple[Path, int]:
-    lib_path = utils.get_library_dir()
-    for frame_info in inspect.stack():
-        frame_file_path = Path(frame_info.filename)
-
-        # always evaluates to true eventually
-        if not frame_file_path.is_relative_to(lib_path):
-            return frame_file_path, frame_info.lineno
 
 
 def read_encode_file(file_path: Path | str) -> str:
     target = Path(file_path)
 
-    if file_path.startswith('.'):
-        caller_path = first_external_caller()[0]
+    if isinstance(file_path, str) and file_path.startswith('.'):
+        caller_path = utils.first_external_caller()[0]
         target = caller_path.parent / file_path
 
     target = target.resolve(strict=True)
@@ -53,52 +43,35 @@ def read_cached_file_lines(file_path: Path) -> list[str]:
         return file.readlines()
 
 
-def extract_caller_block(file_path: Path, line_number: int) -> tuple[list[str], int, int]:
-    lines = read_cached_file_lines(file_path)
-    open_parentheses = 0
-    start = line_number - 1
+def switch_file_secret_values(sfd_list: list[SecretFieldDetails]) -> None:
+    secrets_by_file: dict[Path, list[SecretFieldDetails]] = defaultdict(list)
+    for sfd in sfd_list:
+        secrets_by_file[sfd.file_path].append(sfd)
 
-    for i, line in enumerate(lines[start:], start=start):
-        open_parentheses += line.count('(')
-        open_parentheses -= line.count(')')
-        if open_parentheses == 0:
-            return lines, start, i
+    if not all(path.is_file() for path in secrets_by_file.keys()):
+        raise FileNotFoundError("Cannot write registered secrets into missing files.")
 
+    for path, sfd_list in secrets_by_file.items():
+        with path.open('r') as file:
+            lines = file.readlines()
 
-def find_kwarg_line(keyword: str, current_value: str) -> tuple[Path, int]:
-    file_path, line_number = first_external_caller()
-    lines, start, end = extract_caller_block(file_path, line_number)
+        for sfd in sfd_list:
+            parts = separate_kwarg_line(lines[sfd.line_number])
+            if parts and sfd.field_keyword in parts.keyword:
+                old, new = None, None
 
-    pattern_equal = rf"^\s*{re.escape(keyword)}\s*=\s*['\"]{re.escape(current_value)}['\"].*\s*$"
-    pattern_colon = rf"^\s*['\"]{re.escape(keyword)}['\"]\s*:\s*['\"]{re.escape(current_value)}['\"].*\s*$"
+                if sfd.secret_value in parts.value:
+                    old, new = sfd.secret_value, wrap_sid(sfd.identifier)
+                elif wrapped_sid := sanitize_wrapped_sid(parts.value):
+                    if validate_sid(wrapped_sid):
+                        old, new = wrapped_sid, sfd.secret_value
 
-    for i, line in enumerate(lines[start:end + 1], start=start):
-        if ':' in line and '=' in line:
-            pattern = (
-                pattern_equal if
-                line.index('=') < line.index(':')
-                else pattern_colon
-            )
-            if re.search(pattern, line):
-                return file_path, i
-        elif ':' in line:
-            if re.search(pattern_colon, line):
-                return file_path, i
-        elif '=' in line:
-            if re.search(pattern_equal, line):
-                return file_path, i
+                if old and new:
+                    lines[sfd.line_number] = ''.join([
+                        parts.keyword,
+                        parts.separator,
+                        parts.value.replace(old, new)
+                    ])
 
-
-def replace_kwarg_value(file_path: Path, line_number: int,
-                        old_value: str, new_value: str) -> None:
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-
-    pattern = re.escape(old_value)
-    lines[line_number] = re.sub(
-        pattern,
-        new_value,
-        lines[line_number]
-    )
-    with open(file_path, 'w') as file:
-        file.writelines(lines)
+        with path.open('w') as file:
+            file.writelines(lines)
