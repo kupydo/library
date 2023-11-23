@@ -86,21 +86,23 @@ class BaseSecret(KupydoNamespacedModel):
 
     @staticmethod
     def _resolve_secret(keyword: str, value: str, from_file: bool = False) -> str:
-        if sid := utils.unwrap_sid(value):  # check if value is sid
+        if sid := tools.unwrap_sid(value):  # check if value is sid
             secret = GlobalRegistry.get_secret(sid)
             return secret.secret_value
 
-        file_path, line_number = tools.find_kwarg_line(keyword, value)
+        file_path, from_line = utils.first_external_caller()
+        lines = tools.read_cached_file_lines(file_path)
+        lineno = tools.find_kwarg_line(lines, from_line, keyword, value)
         secret = tools.read_encode_file(value) if from_file else value
 
         if GlobalRegistry.is_enabled():
             sfd = SecretFieldDetails(
                 file_path=file_path,
-                line_number=line_number,
+                line_number=lineno,
                 field_keyword=keyword,
                 field_value=value,
                 secret_value=secret,
-                identifier=utils.generate_sid()
+                identifier=tools.generate_sid()
             )
             GlobalRegistry.register_secret(sfd)
         return secret
