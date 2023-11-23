@@ -28,6 +28,7 @@ __all__ = [
     "validate_sid",
     "wrap_sid",
     "unwrap_sid",
+    "sanitize_wrapped_sid",
     "deep_merge"
 ]
 
@@ -93,6 +94,15 @@ def wrap_sid(unwrapped_sid: str) -> str | None:
 def unwrap_sid(wrapped_sid: str) -> str | None:
     if unwrapped_sid := validate_sid(wrapped_sid):
         return unwrapped_sid
+
+
+def sanitize_wrapped_sid(dirty_sid: str) -> str | None:
+    start_index = dirty_sid.find('[')
+    end_index = dirty_sid.rfind(']')
+
+    if start_index != -1 and end_index != -1 and end_index > start_index:
+        return dirty_sid[start_index:end_index + 1]
+    return None
 
 
 def deep_merge(base: T,
