@@ -21,7 +21,7 @@ from .sidtools import *
 __all__ = [
     "read_encode_file",
     "read_cached_file_lines",
-    "switch_file_secret_values"
+    "replace_file_secret_values"
 ]
 
 
@@ -43,7 +43,7 @@ def read_cached_file_lines(file_path: Path) -> list[str]:
         return file.readlines()
 
 
-def switch_file_secret_values(sfd_list: list[SecretFieldDetails]) -> None:
+def replace_file_secret_values(sfd_list: list[SecretFieldDetails], decrypt: bool = False) -> None:
     secrets_by_file: dict[Path, list[SecretFieldDetails]] = defaultdict(list)
     for sfd in sfd_list:
         secrets_by_file[sfd.file_path].append(sfd)
@@ -60,11 +60,14 @@ def switch_file_secret_values(sfd_list: list[SecretFieldDetails]) -> None:
             if parts and sfd.field_keyword in parts.keyword:
                 old, new = None, None
 
-                if sfd.secret_value in parts.value:
-                    old, new = sfd.secret_value, wrap_sid(sfd.identifier)
-                elif wrapped_sid := sanitize_wrapped_sid(parts.value):
-                    if validate_sid(wrapped_sid):
-                        old, new = wrapped_sid, sfd.secret_value
+                match decrypt:
+                    case False:
+                        if sfd.secret_value in parts.value:
+                            old, new = sfd.secret_value, wrap_sid(sfd.identifier)
+                    case True:
+                        wrapped_sid = sanitize_wrapped_sid(parts.value)
+                        if wrapped_sid and validate_sid(wrapped_sid):
+                            old, new = wrapped_sid, sfd.secret_value
 
                 if old and new:
                     lines[sfd.line_number] = ''.join([

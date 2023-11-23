@@ -38,7 +38,7 @@ def script() -> callable:
 				name="login"
 			)
 			secrets = GlobalRegistry.get_all_secrets()
-			tools.switch_file_secret_values(secrets)
+			tools.replace_file_secret_values(secrets)
 			for sec in secrets:
 				print(sec.field_keyword, sec.identifier)
 		''')
