@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import Callable, Type, Any
 from dotmap import DotMap
 from pathlib import Path
@@ -27,8 +27,7 @@ __all__ = [
 _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
 
 
-@dataclass
-class SecretFieldDetails:
+class SecretFieldDetails(BaseModel):
     file_path: Path
     line_number: int
     field_keyword: str
