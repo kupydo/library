@@ -17,7 +17,7 @@ def test_with_equal():
     keyword = "key"
     value = "value"
     pattern = tools.kwarg_regex_pattern(line, keyword, value)
-    assert pattern == r"^\s*key\s*=\s*['\"]value['\"].*\s*$", \
+    assert pattern == r"^.*\s*key\s*=\s*['\"]value['\"].*\s*$", \
         "Should generate correct regex for '=' separator"
 
 
@@ -26,7 +26,7 @@ def test_with_colon():
     keyword = "key"
     value = "value"
     pattern = tools.kwarg_regex_pattern(line, keyword, value)
-    assert pattern == r"^\s*['\"]key['\"]\s*:\s*['\"]value['\"].*\s*$", \
+    assert pattern == r"^.*\s*['\"]key['\"]\s*:\s*['\"]value['\"].*\s*$", \
         "Should generate correct regex for ':' separator"
 
 
@@ -46,6 +46,6 @@ def test_special_characters_in_keyword_value():
     pattern = tools.kwarg_regex_pattern(line, keyword, value)
     escaped_keyword = re.escape(keyword)
     escaped_value = re.escape(value)
-    expected_pattern = rf"^\s*{escaped_keyword}\s*=\s*['\"]{escaped_value}['\"].*\s*$"
+    expected_pattern = rf"^.*\s*{escaped_keyword}\s*=\s*['\"]{escaped_value}['\"].*\s*$"
     assert pattern == expected_pattern, \
         "Should correctly escape special characters in keyword and value"

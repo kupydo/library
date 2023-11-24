@@ -45,7 +45,7 @@ class SecretNotFoundError(KupydoBaseError):
 
 class KwargNotFoundError(KupydoBaseError):
     def __init__(self, keyword: str, value: str):
-        super().__init__(f"Unable to find kwarg in file for keyword '{keyword}' and value '{value}'")
+        super().__init__(f"Unable to find kwarg in lines for keyword '{keyword}' and value '{value}'")
 
 
 class ForbiddenPlaintextError(KupydoBaseError):

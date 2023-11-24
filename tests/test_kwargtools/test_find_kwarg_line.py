@@ -13,11 +13,23 @@ from kupydo.internal import tools
 from kupydo.internal import errors
 
 
-def test_find_kwarg_line_success():
+def test_single_line_success():
 	username = "asdfg"
 	password = "qwerty"
 	code_block = [
-		f'auth = Secret.BasicAuth(',
+		f'Secret.BasicAuth(name="login", username="{username}", password="{password}")',
+	]
+	lineno_a = tools.find_kwarg_line(code_block, 0, 'username', username)
+	lineno_b = tools.find_kwarg_line(code_block, 0, 'password', password)
+	assert lineno_a == 0 and lineno_b == 0, \
+		"Function line number output does not match expected line number"
+
+
+def test_multi_line_success():
+	username = "asdfg"
+	password = "qwerty"
+	code_block = [
+		f'Secret.BasicAuth(',
 		f'    username="{username}",',
 		f'    password="{password}",',
 		f'    name="login"',

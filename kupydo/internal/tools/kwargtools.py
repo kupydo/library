@@ -60,9 +60,9 @@ def kwarg_regex_pattern(line: str, keyword: str, value: str) -> str | None:
     if parts := separate_kwarg_line(line):
         kwd, val = re.escape(keyword), re.escape(value)
         if parts.separator == '=':
-            return rf"^\s*{kwd}\s*=\s*['\"]{val}['\"].*\s*$"
+            return rf"^.*\s*{kwd}\s*=\s*['\"]{val}['\"].*\s*$"
         elif parts.separator == ':':
-            return rf"^\s*['\"]{kwd}['\"]\s*:\s*['\"]{val}['\"].*\s*$"
+            return rf"^.*\s*['\"]{kwd}['\"]\s*:\s*['\"]{val}['\"].*\s*$"
     return None
 
 
