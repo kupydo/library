@@ -12,7 +12,7 @@ from typing import Annotated
 from typer import Typer, Option
 from rich.console import Console
 from kupydo.internal.cli.commands import *
-from kupydo.internal.cli.classes import PackageInfo
+from kupydo.internal.cli.info import PackageInfo
 
 
 app = Typer()

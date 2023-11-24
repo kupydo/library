@@ -11,7 +11,7 @@
 import site
 from pathlib import Path
 from email.parser import Parser
-from kupydo.internal.cli.errors import *
+from kupydo.internal.errors import *
 
 
 class PackageInfo:

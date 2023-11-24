@@ -8,30 +8,70 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from __future__ import annotations
+import re
 import orjson
 from pathlib import Path
-from kupydo.internal.cli import utils
-from kupydo.internal.cli.classes import KupydoConfig
+from pydantic import BaseModel, field_validator
+from kupydo.internal import utils
 
 
-def get_config_file_path() -> Path:
-    return utils.find_repo_path() / '.kupydo'
+CONFIG_FILE_NAME = '.kupydo'
 
 
-def read_config_file() -> KupydoConfig:
-    path = get_config_file_path()
-    path.touch(exist_ok=True)
-    with path.open('rb') as file:
-        contents = file.read() or "{}"
-    obj = orjson.loads(contents)
-    return KupydoConfig(**obj)
+class KupydoProjectDetails(BaseModel):
+	name: str
+	path: str
+	pubkey: str
+
+	@field_validator("name")
+	@classmethod
+	def validate_name(cls, v: str) -> str:
+		assert len(v) <= 20, "name must be less than or equal to 20 characters."
+		assert v.isalnum(), "name must consist of alphanumeric characters: a-z, 0-9."
+		return v
+
+	@field_validator("path", mode="before")
+	@classmethod
+	def validate_path(cls, v: str) -> str:
+		path = utils.repo_rel_to_abs_path(v)
+		assert path.is_file(), "path cannot point to a non-existent file."
+		assert path.name == "Heart.py", "path must point to a file named 'Heart.py'."
+		return v
+
+	@field_validator("pubkey")
+	@classmethod
+	def validate_pubkey(cls, v: str) -> str:
+		allowed_pattern = r'^age[0-9a-z]{59}$'
+		forbidden_pattern = r"^AGE-SECRET-KEY-[0-9A-Z]{59}$"
+		assert re.match(forbidden_pattern, v) is None, \
+			"not allowed to assign an AGE secret key to the pubkey field."
+		assert re.match(allowed_pattern, v) is not None, \
+			"must assign a valid AGE public key to the pubkey field."
+		return v
 
 
-def write_config_file(config: KupydoConfig):
-    path = get_config_file_path()
-    dump = orjson.dumps(
-        config.model_dump(mode='json'),
-        option=orjson.OPT_INDENT_2
-    )
-    with path.open('wb') as file:
-        file.write(dump)
+class KupydoConfig(BaseModel):
+	projects: list[KupydoProjectDetails]
+
+	@staticmethod
+	def _get_config_file_path() -> Path:
+		return utils.find_repo_path() / CONFIG_FILE_NAME
+
+	@classmethod
+	def read(cls) -> KupydoConfig:
+		path = cls._get_config_file_path()
+		path.touch(exist_ok=True)
+		with path.open('rb') as file:
+			contents = file.read() or b'{}'
+		obj = orjson.loads(contents)
+		return KupydoConfig(**obj)
+
+	def write(self) -> None:
+		path = self._get_config_file_path()
+		dump = orjson.dumps(
+			self.model_dump(mode='json'),
+			option=orjson.OPT_INDENT_2
+		)
+		with path.open('wb') as file:
+			file.write(dump)
