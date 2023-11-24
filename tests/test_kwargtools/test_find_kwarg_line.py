@@ -8,54 +8,48 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-import site
 import pytest
-import textwrap
-import subprocess
-from pathlib import Path
-from dotmap import DotMap
+from kupydo.internal import tools
+from kupydo.internal import errors
 
 
-@pytest.fixture
-def script() -> callable:
-	def closure(username: str, password: str) -> str:
-		pkgs = site.getsitepackages()
-		lib = Path(__file__).parents[2].as_posix()
-		pkgs.append(lib)
-		return textwrap.dedent(f'''
-			import sys
-			for path in {pkgs}:
-				sys.path.append(path)
-
-			from kupydo.models import Secret
-			from kupydo.internal import tools
-
-			auth = Secret.BasicAuth(
-				username="{username}",
-				password="{password}",
-				name="login"
-			)
-			print(auth.values.string_data)
-		''')
-	return closure
-
-
-def test_absolute_file_path(tmp_path: Path, script: callable):
+def test_find_kwarg_line_success():
 	username = "asdfg"
 	password = "qwerty"
+	code_block = [
+		f'auth = Secret.BasicAuth(',
+		f'    username="{username}",',
+		f'    password="{password}",',
+		f'    name="login"',
+		f')'
+	]
+	lineno1 = tools.find_kwarg_line(code_block, 0, 'username', username)
+	lineno2 = tools.find_kwarg_line(code_block, 0, 'password', password)
 
-	script = script(username, password)
-	script_path = tmp_path / "test_script.py"
-	script_path.write_text(script)
-	result = subprocess.run(
-		['python', script_path],
-		capture_output=True,
-		text=True
-	)
-	stdout = result.stdout.strip()
-	obj: DotMap = eval(stdout)
+	assert lineno1 == 1 and lineno2 == 2, \
+		"Function line number output does not match expected line number"
 
-	assert obj.username == username, \
-		"Expected username does not match the returned username"
-	assert obj.password == password, \
-		"Expected password does not match the returned password"
+
+def test_find_kwarg_line_failure():
+	code_block = [
+		"def example_func(a, b, c):",
+		"    print(a, b, c)"
+	]
+	with pytest.raises(errors.KwargNotFoundError):
+		tools.find_kwarg_line(code_block, 0, 'x', '10')
+
+
+def test_no_kwarg_present():
+	code_block = [
+		"# Just a comment",
+		"def no_kwarg_func(a, b):",
+		"    print(a + b)"
+	]
+	with pytest.raises(errors.KwargNotFoundError):
+		tools.find_kwarg_line(code_block, 0, 'a', '1')
+
+
+def test_edge_case_empty_block():
+	empty_block = []
+	with pytest.raises(errors.KwargNotFoundError):
+		tools.find_kwarg_line(empty_block, 0, 'x', '10')

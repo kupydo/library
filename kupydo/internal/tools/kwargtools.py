@@ -14,21 +14,25 @@ from kupydo.internal.errors import *
 
 
 __all__ = [
-    "find_kwarg_line",
-    "separate_kwarg_line",
     "extract_caller_block",
-    "kwarg_regex_pattern"
+    "separate_kwarg_line",
+    "kwarg_regex_pattern",
+    "find_kwarg_line"
 ]
 
 
-def find_kwarg_line(lines: list[str], from_line: int, keyword: str, value: str) -> int:
-    if block := extract_caller_block(lines, from_line):
-        s, e = block.start, block.end
-        for i, line in enumerate(lines[s:e + 1], start=s):
-            if pattern := kwarg_regex_pattern(line, keyword, value):
-                if re.search(pattern, line):
-                    return i
-    raise KwargNotFoundError(keyword, value)  # pragma: no cover
+def extract_caller_block(lines: list[str], lineno: int) -> DotMap | None:
+    start = lineno - 1 if lineno > 0 else 0
+    open_parens, close_parens = 0, 0
+
+    for i, line in enumerate(lines[start:], start=start):
+        open_parens += line.count('(')
+        close_parens += line.count(')')
+        if open_parens == 0 and close_parens > 0:
+            break
+        elif open_parens > 0 and open_parens == close_parens:
+            return DotMap(start=start, end=i)
+    return None
 
 
 def separate_kwarg_line(line: str) -> DotMap | None:
@@ -52,21 +56,6 @@ def separate_kwarg_line(line: str) -> DotMap | None:
     return None
 
 
-def extract_caller_block(lines: list[str], line_number: int) -> DotMap | None:
-    open_parens = 0
-    close_parens = 0
-    start = line_number - 1
-
-    for i, line in enumerate(lines[start:], start=start):
-        open_parens += line.count('(')
-        close_parens += line.count(')')
-        if open_parens == 0 and close_parens > 0:
-            break
-        elif open_parens > 0 and open_parens == close_parens:
-            return DotMap(start=start, end=i)
-    return None
-
-
 def kwarg_regex_pattern(line: str, keyword: str, value: str) -> str | None:
     if parts := separate_kwarg_line(line):
         kwd, val = re.escape(keyword), re.escape(value)
@@ -75,3 +64,13 @@ def kwarg_regex_pattern(line: str, keyword: str, value: str) -> str | None:
         elif parts.separator == ':':
             return rf"^\s*['\"]{kwd}['\"]\s*:\s*['\"]{val}['\"].*\s*$"
     return None
+
+
+def find_kwarg_line(lines: list[str], from_line: int, keyword: str, value: str) -> int:
+    if block := extract_caller_block(lines, from_line):
+        s, e = block.start, block.end
+        for i, line in enumerate(lines[s:e + 1], start=s):
+            if pattern := kwarg_regex_pattern(line, keyword, value):
+                if re.search(pattern, line):
+                    return i
+    raise KwargNotFoundError(keyword, value)  # pragma: no cover

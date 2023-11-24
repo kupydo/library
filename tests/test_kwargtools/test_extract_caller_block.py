@@ -13,7 +13,7 @@ from kupydo.internal import tools
 
 def test_simple_function_call():
 	lines = ["print('Hello World')"]
-	result = tools.extract_caller_block(lines, 1)
+	result = tools.extract_caller_block(lines, 0)
 	assert result.start == 0 and result.end == 0, \
 		"Should correctly identify the block for a simple function call"
 
@@ -28,20 +28,20 @@ def test_multiline_class_instantiation():
 		"    )",
 		")"
 	]
-	result = tools.extract_caller_block(lines, 1)
+	result = tools.extract_caller_block(lines, 0)
 	assert result.start == 0 and result.end == 6, \
 		"Should correctly identify the block for nested function calls"
 
 
 def test_imbalanced_start_parentheses():
 	lines = ["SomeFunction(", "   arg1, arg2"]
-	result = tools.extract_caller_block(lines, 1)
+	result = tools.extract_caller_block(lines, 0)
 	assert result is None, \
 		"Should return None when parentheses are not balanced"
 
 
 def test_imbalanced_end_parentheses():
 	lines = ["SomeFunction", "   arg1, arg2)"]
-	result = tools.extract_caller_block(lines, 1)
+	result = tools.extract_caller_block(lines, 0)
 	assert result is None, \
 		"Should return None when parentheses are not balanced"
