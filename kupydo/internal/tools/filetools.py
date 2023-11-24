@@ -8,6 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+import orjson
 import base64
 import functools
 from pathlib import Path
@@ -21,7 +22,8 @@ from .sidtools import *
 __all__ = [
     "read_encode_file",
     "read_cached_file_lines",
-    "replace_file_secret_values"
+    "replace_file_secret_values",
+    "write_secret_files"
 ]
 
 
@@ -78,3 +80,16 @@ def replace_file_secret_values(sfd_list: list[SecretFieldDetails], decrypt: bool
 
         with path.open('w') as file:
             file.writelines(lines)
+
+
+def write_secret_files(enc_dir: Path, sfd_list: list[SecretFieldDetails]) -> None:
+    for sfd in sfd_list:
+        obj = sfd.model_dump(mode="json")
+        rel_path = utils.repo_abs_to_rel_path(sfd.file_path)
+        obj['file_path'] = rel_path
+
+        secret_file = enc_dir / sfd.identifier
+        secret_file.touch(exist_ok=True)
+
+        with secret_file.open('wb') as file:
+            file.write(orjson.dumps(obj))
