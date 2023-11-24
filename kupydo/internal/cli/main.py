@@ -8,20 +8,17 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-import site
-from pathlib import Path
 from typing import Annotated
 from typer import Typer, Option
-from email.parser import Parser
 from rich.console import Console
-from kupydo.internal.cli.encrypt import enc_app
-from kupydo.internal.cli.decrypt import dec_app
-from kupydo.internal.errors import InvalidPackageError
+from kupydo.internal.cli.commands import *
+from kupydo.internal.cli.classes import PackageInfo
 
 
 app = Typer()
 
 
+app.add_typer(init_app)
 app.add_typer(enc_app)
 app.add_typer(dec_app)
 
@@ -57,37 +54,3 @@ def main(version: Version = False, info: Info = False):
             console.print(f"{indent2}{k}: {v}")
 
         console.print('')
-
-
-class PackageInfo:
-    name: str
-    version: str
-    summary: str
-    license: str
-    author: str
-    homepage: str
-
-    def __init__(self):
-        data = self._read_package_info()
-        for k, v in data.items():
-            k = k.replace('-', '').lower()
-            if k in self.__annotations__:
-                setattr(self, k, v)
-        for k in self.__annotations__.keys():
-            if k not in self.__dict__:
-                raise InvalidPackageError
-
-    @staticmethod
-    def _read_package_info() -> dict:
-        for site_dir in site.getsitepackages():
-            sd = Path(site_dir)
-            if "site-packages" in sd.as_posix():
-                for child in sd.iterdir():
-                    if child.name.startswith('kupydo') and child.suffix == '.dist-info':
-                        meta = child / 'METADATA'
-                        if meta.is_file():
-                            parser = Parser()
-                            contents = meta.read_text()
-                            parsed_metadata = parser.parsestr(contents)
-                            return dict(parsed_metadata)
-        raise InvalidPackageError

@@ -196,3 +196,6 @@ fabric.properties
 
 # General folder to exclude
 .no-vcs
+
+# Kupydo conf file is not needed
+/.kupydo

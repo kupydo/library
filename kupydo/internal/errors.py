@@ -17,8 +17,7 @@ __all__ = [
     "ResourcesMissingError",
     "SecretNotFoundError",
     "KwargNotFoundError",
-    "ForbiddenPlaintextError",
-    "InvalidPackageError"
+    "ForbiddenPlaintextError"
 ]
 
 
@@ -52,11 +51,3 @@ class ForbiddenPlaintextError(KupydoBaseError):
     def __init__(self, file_path: Path, line_number: int, secret_value: str):
         super().__init__(f"Forbidden plaintext value '{secret_value}'\n"
                          f"on line {line_number} in file '{file_path.name}'.")
-
-
-class InvalidPackageError(KupydoBaseError):
-    def __init__(self):
-        super().__init__(
-            "\nCannot display package info with invalid package data."
-            "\nPlease try to re-install kupydo to resolve this issue."
-        )
