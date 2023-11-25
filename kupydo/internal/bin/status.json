@@ -1,0 +1,11 @@
+{
+  "comment": "SOPS and AGE dependencies are downloaded into the bin folder",
+  "sops": {
+    "last_update": "",
+    "current_version": ""
+  },
+  "age": {
+    "last_update": "",
+    "current_version": ""
+  }
+}
