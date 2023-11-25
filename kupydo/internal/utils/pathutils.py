@@ -9,7 +9,8 @@
 #   SPDX-License-Identifier: MIT
 #
 from pathlib import Path
-from kupydo.internal.errors import RepoNotFoundError
+from kupydo.internal.errors import *
+from .cacheutils import deepcopy_cache
 
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
 ]
 
 
+@deepcopy_cache
 def find_lib_path() -> Path:
     current_path = Path(__file__).resolve()
     while current_path != current_path.root:
@@ -35,6 +37,7 @@ def find_bin_path() -> Path:
     return find_lib_path() / 'bin'
 
 
+@deepcopy_cache
 def find_repo_path() -> Path:
     current_path = Path.cwd().resolve()
     while current_path != current_path.root:

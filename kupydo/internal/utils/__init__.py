@@ -8,6 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from .cacheutils import *
 from .modelutils import *
 from .pathutils import *
 from .sysutils import *
