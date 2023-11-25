@@ -11,3 +11,12 @@
 from .decrypt import dec_app
 from .encrypt import enc_app
 from .init import init_app
+from .update import update_app
+
+
+__all__ = [
+	"dec_app",
+	"enc_app",
+	"init_app",
+	"update_app"
+]

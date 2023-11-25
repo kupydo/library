@@ -11,3 +11,10 @@
 from .deployment import Deployment
 from .configmap import ConfigMap
 from .secret import Secret
+
+
+__all__ = [
+	"Deployment",
+	"ConfigMap",
+	"Secret"
+]
