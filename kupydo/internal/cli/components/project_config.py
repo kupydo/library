@@ -16,10 +16,13 @@ from pydantic import BaseModel, field_validator
 from kupydo.internal import utils
 
 
+__all__ = ["DeploymentDetails", "ProjectConfig"]
+
+
 CONFIG_FILE_NAME = '.kupydo'
 
 
-class KupydoDeploymentDetails(BaseModel):
+class DeploymentDetails(BaseModel):
 	name: str
 	path: str
 	pubkey: str
@@ -51,8 +54,8 @@ class KupydoDeploymentDetails(BaseModel):
 		return v
 
 
-class KupydoConfig(BaseModel):
-	deployments: list[KupydoDeploymentDetails]
+class ProjectConfig(BaseModel):
+	deployments: list[DeploymentDetails]
 
 	def __init__(self) -> None:
 		super().__init__(**self._read())
@@ -81,6 +84,6 @@ class KupydoConfig(BaseModel):
 			file.write(dump)
 
 	def update(self) -> None:
-		config = KupydoConfig()
+		config = ProjectConfig()
 		for k, v in vars(config).items():
 			setattr(self, k, v)

@@ -14,6 +14,9 @@ from email.parser import Parser
 from kupydo.internal.errors import *
 
 
+__all__ = ["PackageInfo"]
+
+
 class PackageInfo:
     name: str
     version: str

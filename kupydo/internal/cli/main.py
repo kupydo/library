@@ -12,15 +12,16 @@ from typing import Annotated
 from typer import Typer, Option
 from rich.console import Console
 from kupydo.internal.cli.commands import *
-from kupydo.internal.cli.info import PackageInfo
+from kupydo.internal.cli.components import *
 
 
 app = Typer()
 
 
-app.add_typer(init_app)
 app.add_typer(enc_app)
 app.add_typer(dec_app)
+app.add_typer(init_app)
+app.add_typer(update_app)
 
 
 Version = Annotated[bool, Option(

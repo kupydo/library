@@ -19,7 +19,8 @@ __all__ = [
     "KwargNotFoundError",
     "ForbiddenPlaintextError",
     "RepoNotFoundError",
-    "InvalidPackageError"
+    "InvalidPackageError",
+    "AssetNotFoundError"
 ]
 
 
@@ -65,4 +66,12 @@ class InvalidPackageError(KupydoBaseError):
         super().__init__(
             "\nCannot display package info with invalid package data."
             "\nPlease try to re-install kupydo to resolve this issue."
+        )
+
+
+class AssetNotFoundError(KupydoBaseError):
+    def __init__(self, tool: str, opsys: str, arch: str):
+        super().__init__(
+            f"\nUnable to find compatible '{tool}' assets "
+            f"for your OS '{opsys}' and platform '{arch}'."
         )
