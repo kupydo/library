@@ -20,7 +20,7 @@ from kupydo.internal import tools
 def script() -> callable:
 	def closure(username: str, password: str) -> str:
 		pkgs = site.getsitepackages()
-		lib = Path(__file__).parents[2].as_posix()
+		lib = Path(__file__).parents[3].as_posix()
 		pkgs.append(lib)
 		return textwrap.dedent(f'''
 			import sys

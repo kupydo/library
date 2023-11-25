@@ -20,7 +20,7 @@ from pathlib import Path
 def script(tmp_path) -> callable:
 	def closure(from_relative: bool = False) -> str:
 		pkgs = site.getsitepackages()
-		lib = Path(__file__).parents[2].as_posix()
+		lib = Path(__file__).parents[3].as_posix()
 		pkgs.append(lib)
 
 		data_path = tmp_path / "test_data.py"
