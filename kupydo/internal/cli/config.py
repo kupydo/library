@@ -19,7 +19,7 @@ from kupydo.internal import utils
 CONFIG_FILE_NAME = '.kupydo'
 
 
-class KupydoProjectDetails(BaseModel):
+class KupydoDeploymentDetails(BaseModel):
 	name: str
 	path: str
 	pubkey: str
@@ -52,20 +52,24 @@ class KupydoProjectDetails(BaseModel):
 
 
 class KupydoConfig(BaseModel):
-	projects: list[KupydoProjectDetails]
+	deployments: list[KupydoDeploymentDetails]
+
+	def __init__(self) -> None:
+		super().__init__(**self._read())
 
 	@staticmethod
-	def _get_config_file_path() -> Path:
-		return utils.find_repo_path() / CONFIG_FILE_NAME
+	def _get_config_path() -> Path:
+		repo_path = utils.find_repo_path()
+		config_path = repo_path / CONFIG_FILE_NAME
+		config_path.touch(exist_ok=True)
+		return config_path
 
 	@classmethod
-	def read(cls) -> KupydoConfig:
-		path = cls._get_config_file_path()
-		path.touch(exist_ok=True)
+	def _read(cls) -> dict:
+		path = cls._get_config_path()
 		with path.open('rb') as file:
 			contents = file.read() or b'{}'
-		obj = orjson.loads(contents)
-		return KupydoConfig(**obj)
+		return orjson.loads(contents)
 
 	def write(self) -> None:
 		path = self._get_config_file_path()
@@ -75,3 +79,8 @@ class KupydoConfig(BaseModel):
 		)
 		with path.open('wb') as file:
 			file.write(dump)
+
+	def update(self) -> None:
+		config = KupydoConfig()
+		for k, v in vars(config).items():
+			setattr(self, k, v)
