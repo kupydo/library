@@ -35,7 +35,8 @@ __all__ = [
 	"find_compatible_asset",
 	"fetch_latest_release",
 	"download_compatible_asset",
-	"install_asset"
+	"install_asset",
+	"uninstall_assets"
 ]
 
 
@@ -88,7 +89,7 @@ class LatestRelease(BaseModel):
 	@field_validator("tag", mode="after")
 	@classmethod
 	def validate_tag_name(cls, v: str) -> str:
-		assert re.match(r"v\d+\.\d+\.\d+", v), \
+		assert re.match(r"v?\d+\.\d+\.\d+", v), \
 			"The version tag does not match the expected pattern"
 		return v
 
@@ -177,3 +178,11 @@ def install_asset(tool: CryptoTool, file_path: Path) -> None:
 			path=file_path.parent / 'age',
 			ignore_errors=True
 		)
+
+
+def uninstall_assets() -> None:
+	path = utils.find_bin_path()
+	for item in path.iterdir():
+		if item.name == 'status.json':
+			continue
+		item.unlink(missing_ok=True)
