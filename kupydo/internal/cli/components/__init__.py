@@ -8,6 +8,7 @@
 #
 #   SPDX-License-Identifier: MIT
 #
+from .crypto_tools import *
 from .github_assets import *
 from .package_info import *
 from .project_config import *
@@ -15,6 +16,8 @@ from .status_file import *
 
 
 __all__ = [
+	"check_tool_version",
+	"check_tool_updates",
 	"CryptoTool",
 	"AssetType",
 	"ReleaseAsset",

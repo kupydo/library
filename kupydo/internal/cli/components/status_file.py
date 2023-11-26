@@ -30,7 +30,7 @@ class StatusFile(DotMap):
 		path = cls._file_path()
 		with path.open('rb') as file:
 			data = orjson.loads(file.read())
-		return StatusFile(**data)
+		return StatusFile(data)
 
 	def update(self, releases: tuple[LatestRelease]) -> None:
 		for rel in releases:
