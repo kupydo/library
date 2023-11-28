@@ -9,15 +9,14 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from pydantic import BaseModel
-from typing import Callable, Type, Any
-from dotmap import DotMap
 from pathlib import Path
-from kupydo.internal.errors import *
+from dotmap import DotMap
+from typing import Callable, Type, Any
+from .sec_ops import SecretFieldDetails
+from .errors import *
 
 
 __all__ = [
-    "SecretFieldDetails",
     "GlobalRegistry",
     "LocalRegistry",
     "DynamicTypeRegistry"
@@ -25,15 +24,6 @@ __all__ = [
 
 
 _ResourceTemplates = list[tuple[Type, dict[str, Any]]]
-
-
-class SecretFieldDetails(BaseModel):
-    file_path: Path
-    line_number: int
-    field_keyword: str
-    field_value: str
-    secret_value: str
-    identifier: str
 
 
 class GlobalRegistry:
@@ -70,7 +60,7 @@ class GlobalRegistry:
     @classmethod
     @disabled_check
     def register_secret(cls, sfd: SecretFieldDetails) -> None:
-        cls._secrets[sfd.identifier] = sfd
+        cls._secrets[sfd.enc_tag] = sfd
 
     @classmethod
     @disabled_check

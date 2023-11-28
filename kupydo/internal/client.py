@@ -10,7 +10,7 @@
 #
 from kubernetes_asyncio import client
 from .response import Response, error_handler
-from .config import autoload_config
+from .configs import autoload_config
 from .base import KupydoBaseModel
 from .types import RawModel
 

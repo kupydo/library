@@ -20,7 +20,8 @@ __all__ = [
     "ForbiddenPlaintextError",
     "RepoNotFoundError",
     "InvalidPackageError",
-    "AssetNotFoundError"
+    "AssetNotFoundError",
+    "BadStatusFileError"
 ]
 
 
@@ -75,3 +76,8 @@ class AssetNotFoundError(KupydoBaseError):
             f"\nUnable to find compatible '{tool}' assets "
             f"for your OS '{opsys}' and platform '{arch}'."
         )
+
+
+class BadStatusFileError(KupydoBaseError):
+    def __init__(self):
+        super().__init__("\nNot allowed to write garbage into the status file!")

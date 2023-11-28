@@ -1,11 +1,13 @@
 {
-  "comment": "SOPS and AGE dependencies are downloaded into the bin folder",
-  "sops": {
-    "last_update": "",
-    "current_version": ""
-  },
-  "age": {
-    "last_update": "",
-    "current_version": ""
+  "comment": "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!",
+  "tools": {
+    "sops": {
+      "current_version": "0.0.0",
+      "last_update": "2000-01-01"
+    },
+    "age": {
+      "current_version": "0.0.0",
+      "last_update": "2000-01-01"
+    }
   }
 }

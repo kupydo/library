@@ -35,6 +35,14 @@ update_app = Typer(name="update")
 #
 # 	update_status_file(releases)
 #
+# sf = StatusFile.read()
+# 	for k in sf.keys():
+# 		if k == 'comment':
+# 			continue
+# 		sf[k] = DotMap(
+# 			last_update='',
+# 			current_version=''
+# 		)
 #
 # @init_app.callback(invoke_without_command=True)
 # def cmd_decrypt():

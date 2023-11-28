@@ -8,4 +8,17 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from kupydo.internal.configs.kube_config import *
+from pathlib import Path
+from pydantic import BaseModel
+
+
+__all__ = ["SecretFieldDetails"]
+
+
+class SecretFieldDetails(BaseModel):
+    file_path: Path
+    line_number: int
+    field_keyword: str
+    field_value: str
+    secret_value: str
+    enc_tag: str

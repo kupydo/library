@@ -8,18 +8,21 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from .modelutils import *
-from .pathutils import *
-from .sysutils import *
-from .traceutils import *
+from .file_utils import *
+from .model_utils import *
+from .path_utils import *
+from .sys_utils import *
+from .trace_utils import *
 
 
 __all__ = [
+	"read_encode_file",
+	"read_cached_file_lines",
 	"generate_name",
 	"deep_merge",
 	"find_lib_path",
-	"find_bin_path",
 	"find_repo_path",
+	"find_bin_path",
 	"repo_abs_to_rel_path",
 	"repo_rel_to_abs_path",
 	"get_pc_opsys_arch",
