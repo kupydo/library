@@ -23,17 +23,17 @@ __all__ = [
 
 def find_lib_path() -> Path:
     current_path = Path(__file__).resolve()
-    while current_path != current_path.root:
+    while current_path != current_path.parent:
         lib_path = current_path / 'internal'
         if lib_path.is_dir():
             return lib_path
         current_path = current_path.parent
-    # Always finds internal dir
+    raise RuntimeError("Must find internal dir!")
 
 
 def find_repo_path() -> Path:
     current_path = Path.cwd().resolve()
-    while current_path != current_path.root:
+    while current_path != current_path.parent:
         if (current_path / '.git').is_dir():
             return current_path
         current_path = current_path.parent
