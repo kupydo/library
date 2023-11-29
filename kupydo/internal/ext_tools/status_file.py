@@ -15,8 +15,8 @@ from semver import Version
 from pathlib import Path
 from datetime import date
 from kupydo.internal import utils
-from kupydo.internal.errors import BadStatusFileError
-from .classes import LatestRelease, ExtTool
+from kupydo.internal import errors
+from .classes import LatestRelease
 
 
 __all__ = ["StatusFile"]
@@ -28,60 +28,51 @@ class StatusFile(DotMap):
 		return utils.find_bin_path() / 'status.json'
 
 	@staticmethod
-	def _default() -> dict:
-		comment = "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!"
-		default = dict(current_version='0.0.0', last_update='2000-01-01')
-		return dict(
-			comment=comment,
-			tools=dict(
-				sops=default.copy(),
-				age=default.copy()
-			)
-		)
+	def _default() -> StatusFile:
+		fields = dict(current_version='0.0.0', last_update='2000-01-01')
+		return StatusFile(dict(sops=fields.copy(), age=fields.copy()))
 
 	@classmethod
-	def _validate(cls, sf: StatusFile) -> bool:
-		for k, v in cls._default().items():
-			if k not in sf:
-				return False
-			elif k == 'comment' and sf[k] != v:
-				return False
-
-		for asset in [ExtTool.SOPS, ExtTool.AGE]:
-			data = sf['tools'][asset.name]
-			cv = data['current_version']
-			lu = data['last_update']
+	def _validate(cls, vsf: StatusFile) -> StatusFile:
+		dsf = cls._default()
+		m1 = utils.match_dict_structure(vsf, dsf)
+		m2 = utils.match_dict_structure(dsf, vsf)
+		if not m1 or not m2:
+			return dsf
+		for tool in vsf.values():
 			try:
-				date.fromisoformat(lu)
-				Version.parse(cv)
+				date.fromisoformat(tool.last_update)
+				Version.parse(tool.current_version)
 			except ValueError:
-				return False
-		return True
+				return dsf
+		return vsf
 
 	@classmethod
 	def read(cls) -> StatusFile:
 		path = cls._file_path()
 		with path.open('rb') as file:
 			data = orjson.loads(file.read())
-		sf = StatusFile(data)
-		if not cls._validate(sf):
-			data = cls._default()
-			sf = StatusFile(data)
-		return sf
+		tools = data.get('tools', {})
+		sf = StatusFile(tools, _prevent_method_masking=True)
+		return cls._validate(sf)
 
-	def update(self, releases: tuple[LatestRelease]) -> None:
-		for rel in releases:
-			self[rel.tool.name] = DotMap(
-				last_update=date.today().isoformat(),
-				current_version=rel.tag
-			)
+	def update(self, release: LatestRelease) -> None:
+		try:
+			tools = self._default().keys()
+			if release.tool.name not in tools:
+				raise ValueError
+			Version.parse(release.tag)
+		except ValueError:
+			raise errors.BadStatusFileError
+		self[release.tool.name] = DotMap(
+			last_update=date.today().isoformat(),
+			current_version=release.tag
+		)
 
 	def write(self) -> None:
-		if not self._validate(self):
-			raise BadStatusFileError
-		path = self._file_path()
-		with path.open('wb') as file:
+		comment = "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!"
+		with self._file_path().open('wb') as file:
 			file.write(orjson.dumps(
-				self.toDict(),
+				dict(comment=comment, tools=self.toDict()),
 				option=orjson.OPT_INDENT_2
 			))
