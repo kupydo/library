@@ -16,7 +16,7 @@ from .tag_utils import *
 
 __all__ = [
 	"replace_file_secret_values",
-	"write_secret_files",
+	"write_secret_store_files",
 	"SecretFieldDetails",
 	"extract_caller_block",
 	"separate_kwarg_line",

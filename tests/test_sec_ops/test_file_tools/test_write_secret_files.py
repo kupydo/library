@@ -32,7 +32,7 @@ def test_with_valid_data(mocker, tmp_path):
 		attribute='repo_abs_to_rel_path',
 		return_value=rel_path
 	)
-	sec_ops.write_secret_files(tmp_path, sfd_list)
+	sec_ops.write_secret_store_files(tmp_path, sfd_list)
 	mocked_rel_path.assert_called_once_with(heart_path)
 
 	secret_file = tmp_path / "id1"
@@ -45,5 +45,5 @@ def test_with_valid_data(mocker, tmp_path):
 
 
 def test_with_empty_list(tmp_path):
-	sec_ops.write_secret_files(tmp_path, [])
+	sec_ops.write_secret_store_files(tmp_path, [])
 	assert not any(tmp_path.iterdir())

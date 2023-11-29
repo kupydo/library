@@ -19,7 +19,7 @@ from .tag_utils import *
 
 __all__ = [
     "replace_file_secret_values",
-    "write_secret_files"
+    "write_secret_store_files"
 ]
 
 
@@ -60,7 +60,7 @@ def replace_file_secret_values(sfd_list: list[SecretFieldDetails], decrypt: bool
             file.writelines(lines)
 
 
-def write_secret_files(enc_dir: Path, sfd_list: list[SecretFieldDetails]) -> None:
+def write_secret_store_files(enc_dir: Path, sfd_list: list[SecretFieldDetails]) -> None:
     for sfd in sfd_list:
         obj = sfd.model_dump(mode="json")
         rel_path = utils.repo_abs_to_rel_path(sfd.file_path)
