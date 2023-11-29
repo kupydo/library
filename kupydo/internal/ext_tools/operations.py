@@ -15,8 +15,8 @@ import aiohttp
 import subprocess
 from pathlib import Path
 from semver import Version
-from kupydo.internal import utils
-from kupydo.internal.errors import *
+from kupydo.internal import errors
+from .local_utils import *
 from .status_file import *
 from .classes import *
 
@@ -34,7 +34,7 @@ __all__ = [
 
 def find_compatible_asset(release: LatestRelease) -> ReleaseAsset:
 	pattern = r"\w+[._-]v?\d+\.\d+\.\d+[._-](.*)"
-	pc = utils.get_pc_opsys_arch()
+	pc = get_pc_opsys_arch()
 	for asset in release.assets:
 		if match := re.search(pattern, asset.name):
 			parts = re.split(r"[._-]", match.group(1))
@@ -46,26 +46,26 @@ def find_compatible_asset(release: LatestRelease) -> ReleaseAsset:
 				return asset
 			elif pc.opsys in parts:
 				return asset
-	raise AssetNotFoundError(
+	raise errors.AssetNotFoundError(
 		tool=release.tool.name,
 		opsys=pc.opsys,
 		arch=pc.arch
 	)
 
 
-async def fetch_latest_release(asset: ExtTool) -> LatestRelease:
+async def fetch_latest_release(tool: ExtTool) -> LatestRelease:
 	async with aiohttp.ClientSession() as session:
-		async with session.get(asset.value) as response:
+		async with session.get(tool.url) as response:
 			data = await response.read()
 			return LatestRelease(
 				**orjson.loads(data),
-				tool=asset
+				tool=tool
 			)
 
 
 async def download_compatible_asset(rel: LatestRelease) -> Path:
 	asset = find_compatible_asset(rel)
-	file_path = utils.find_bin_path() / asset.name
+	file_path = get_bin_path() / asset.name
 	async with aiohttp.ClientSession() as session:
 		async with session.get(asset.url) as resp:
 			with file_path.open('wb') as file:
@@ -77,35 +77,24 @@ async def download_compatible_asset(rel: LatestRelease) -> Path:
 
 def install_asset(tool: ExtTool, file_path: Path) -> None:
 	if tool == ExtTool.SOPS:
-		file_name = utils.opsys_binary_name('sops')
-		new_path = file_path.parent / file_name
-		shutil.move(file_path, new_path)
+		shutil.move(file_path, tool.path)
 	elif tool == ExtTool.AGE:
 		shutil.unpack_archive(
 			filename=file_path,
 			extract_dir=file_path.parent
 		)
 		file_path.unlink()
-
-		age_keygen_file = utils.opsys_binary_name('age-keygen')
-		age_file = utils.opsys_binary_name('age')
-
-		shutil.move(
-			src=file_path.parent / 'age' / age_keygen_file,
-			dst=file_path.parent / age_keygen_file
-		)
-		shutil.move(
-			src=file_path.parent / 'age' / age_file,
-			dst=file_path.parent / age_file
-		)
-		shutil.rmtree(
-			path=file_path.parent / 'age',
-			ignore_errors=True
-		)
+		age_dir = get_bin_path() / 'age'
+		for file in age_dir.iterdir():
+			if file.name == 'LICENSE':
+				continue
+			dest = file.parents[1] / file.name
+			shutil.move(src=file, dst=dest)
+		shutil.rmtree(path=age_dir)
 
 
 def uninstall_assets() -> None:
-	path = utils.find_bin_path()
+	path = get_bin_path()
 	for item in path.iterdir():
 		if item.name == 'status.json':
 			continue
@@ -114,9 +103,7 @@ def uninstall_assets() -> None:
 
 def check_installed_version(tool: ExtTool, private: bool = False) -> Version | None:
 	try:
-		path = utils.opsys_binary_name(tool.name)
-		if private:
-			path = utils.find_bin_path() / path
+		path = tool.path if private else tool.name
 		result = subprocess.run(
 			args=[path, '--version'],
 			capture_output=True,
