@@ -45,7 +45,7 @@ def script() -> callable:
 	return closure
 
 
-def test_first_external_caller(tmp_path: Path, script: callable):
+def test_replace_file_secret_values(tmp_path: Path, script: callable):
 	username = "secret-username"
 	password = "secret-password"
 

@@ -14,7 +14,7 @@ from kupydo.internal import utils
 from kupydo.internal import sec_ops
 
 
-def test_write_secret_files_with_valid_data(mocker, tmp_path):
+def test_with_valid_data(mocker, tmp_path):
 	heart_path = Path("C:/projects/myapp/clusters/staging/Heart.py")
 	rel_path = 'clusters/staging/Heart.py'
 	sfd_list = [
@@ -44,6 +44,6 @@ def test_write_secret_files_with_valid_data(mocker, tmp_path):
 		assert data["enc_tag"] == "id1"
 
 
-def test_write_secret_files_with_empty_list(tmp_path):
+def test_with_empty_list(tmp_path):
 	sec_ops.write_secret_files(tmp_path, [])
 	assert not any(tmp_path.iterdir())
