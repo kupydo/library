@@ -19,6 +19,7 @@ from pydantic import (
 	field_validator,
 	model_validator
 )
+from .local_utils import *
 
 
 __all__ = [
@@ -29,13 +30,22 @@ __all__ = [
 ]
 
 
-class ExtTool(str, Enum):
+class ExtTool(Enum):
 	SOPS = "https://api.github.com/repos/getsops/sops/releases/latest"
 	AGE = "https://api.github.com/repos/FiloSottile/age/releases/latest"
+	AGE_KEYGEN = ""
 
 	@property
 	def name(self) -> str:
-		return self._name_.lower()
+		return self._name_.lower().replace('_', '-')
+
+	@property
+	def path(self) -> str:
+		return get_tool_posix_path(self.name)
+
+	@property
+	def url(self) -> str:
+		return self.value
 
 
 class AssetType(str, Enum):
