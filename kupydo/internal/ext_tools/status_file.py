@@ -17,6 +17,7 @@ from datetime import date
 from kupydo.internal import utils
 from kupydo.internal import errors
 from .classes import LatestRelease
+from .local_utils import *
 
 
 __all__ = ["StatusFile"]
@@ -25,7 +26,7 @@ __all__ = ["StatusFile"]
 class StatusFile(DotMap):
 	@staticmethod
 	def _file_path() -> Path:
-		return utils.find_bin_path() / 'status.json'
+		return get_bin_path() / 'status.json'
 
 	@staticmethod
 	def _default() -> StatusFile:

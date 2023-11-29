@@ -16,8 +16,11 @@ from kupydo.internal.errors import BadStatusFileError
 from kupydo.internal.ext_tools import *
 
 
+GET_BIN_PATH = 'kupydo.internal.ext_tools.status_file.get_bin_path'
+
+
 def test_file_path(tmp_path, mocker):
-    mocker.patch('kupydo.internal.utils.find_bin_path', return_value=tmp_path)
+    mocker.patch(GET_BIN_PATH, return_value=tmp_path)
     assert StatusFile._file_path() == tmp_path / "status.json"
 
 
@@ -98,7 +101,7 @@ def status_file(tmp_path: Path) -> callable:
 
 def test_valid_file_read(mocker, status_file):
     tmp_path = status_file(valid=True)
-    mocker.patch('kupydo.internal.utils.find_bin_path', return_value=tmp_path)
+    mocker.patch(GET_BIN_PATH, return_value=tmp_path)
     sf = StatusFile.read()
     assert sf.sops.current_version == '1.2.3'
     assert sf.age.current_version == '4.5.6'
@@ -108,7 +111,7 @@ def test_valid_file_read(mocker, status_file):
 
 def test_invalid_file_read(mocker, status_file):
     tmp_path = status_file(valid=False)
-    mocker.patch('kupydo.internal.utils.find_bin_path', return_value=tmp_path)
+    mocker.patch(GET_BIN_PATH, return_value=tmp_path)
     sf = StatusFile.read()
     assert sf.sops.current_version == '0.0.0'
     assert sf.age.current_version == '0.0.0'
@@ -149,7 +152,7 @@ def test_file_update_with_invalid_tag_format():
 
 def test_file_writing(mocker, status_file):
     tmp_path = status_file(valid=True)
-    mocker.patch('kupydo.internal.utils.find_bin_path', return_value=tmp_path)
+    mocker.patch(GET_BIN_PATH, return_value=tmp_path)
     StatusFile._default().write()
     sf = StatusFile.read()
     assert sf.sops.current_version == '0.0.0'

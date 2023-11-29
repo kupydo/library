@@ -15,7 +15,6 @@ from kupydo.internal.errors import *
 __all__ = [
     "find_lib_path",
     "find_repo_path",
-    "find_bin_path",
     "repo_abs_to_rel_path",
     "repo_rel_to_abs_path"
 ]
@@ -38,10 +37,6 @@ def find_repo_path() -> Path:
             return current_path
         current_path = current_path.parent
     raise RepoNotFoundError
-
-
-def find_bin_path() -> Path:
-    return find_lib_path() / "bin"
 
 
 def repo_abs_to_rel_path(abs_path: Path) -> str:

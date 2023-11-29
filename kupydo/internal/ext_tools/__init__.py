@@ -9,6 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from .classes import *
+from .local_utils import *
 from .operations import *
 from .status_file import *
 
@@ -18,6 +19,10 @@ __all__ = [
 	"AssetType",
 	"ReleaseAsset",
 	"LatestRelease",
+	"get_bin_path",
+	"get_tool_posix_path",
+	"get_pc_opsys_arch",
+	"bin_opsys_name",
 	"find_compatible_asset",
 	"fetch_latest_release",
 	"download_compatible_asset",

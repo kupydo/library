@@ -10,13 +10,32 @@
 #
 import sys
 import platform
+from pathlib import Path
 from dotmap import DotMap
 
 
 __all__ = [
-	"get_pc_opsys_arch",
-	"opsys_binary_name"
+	"get_bin_path",
+	"get_tool_posix_path",
+	"bin_opsys_name",
+	"get_pc_opsys_arch"
 ]
+
+
+def get_bin_path() -> Path:
+	return Path(__file__).parent / "bin"
+
+
+def get_tool_posix_path(name: str) -> str | None:
+	path = get_bin_path() / bin_opsys_name(name)
+	return path.as_posix() if path.is_file() else None
+
+
+def bin_opsys_name(file_name: str) -> str:
+	pc = get_pc_opsys_arch()
+	if pc.opsys == 'windows':
+		return file_name + '.exe'
+	return file_name
 
 
 def get_pc_opsys_arch() -> DotMap:
@@ -37,10 +56,3 @@ def get_pc_opsys_arch() -> DotMap:
 		arch = 'arm'
 
 	return DotMap(opsys=opsys, arch=arch)
-
-
-def opsys_binary_name(file_name: str) -> str:
-	pc = get_pc_opsys_arch()
-	if pc.opsys == 'windows':
-		return file_name + '.exe'
-	return file_name
