@@ -26,9 +26,9 @@ def get_bin_path() -> Path:
 	return Path(__file__).parent / "bin"
 
 
-def get_tool_posix_path(name: str) -> str | None:
+def get_tool_posix_path(name: str) -> str:
 	path = get_bin_path() / bin_opsys_name(name)
-	return path.as_posix() if path.is_file() else None
+	return path.as_posix()
 
 
 def bin_opsys_name(file_name: str) -> str:
