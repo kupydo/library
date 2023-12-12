@@ -22,14 +22,14 @@ class DerivedArgonKey:
 		"salt"
 	)
 
-	def __init__(self, password: str, *, salt: str = None) -> None:
+	def __init__(self, password: str, *, salt: str = None, testing: bool = False) -> None:
 		if not salt:
 			salt_bytes = secrets.token_bytes(32)
 		else:
 			salt_bytes = base64.b64decode(salt)
 		argon = argon2.PasswordHasher(
-			time_cost=2,
-			memory_cost=2 ** 22,
+			time_cost=1 if testing else 2,
+			memory_cost=2 ** (10 if testing else 22),
 			parallelism=4,
 			hash_len=64,
 			salt_len=len(salt_bytes)
