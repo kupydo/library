@@ -1,0 +1,3 @@
+# Everything in the .github folder is owned by org admins
+.github/*               @aabmets
+.github/workflows/*     @aabmets
