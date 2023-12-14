@@ -11,58 +11,112 @@
 import os
 import pytest
 import orjson
-import shutil
 from pathlib import Path
+from dotmap import DotMap
+from typing import Callable, Literal
 from kupydo.internal.project_config import *
 
 
-@pytest.fixture(scope="module", autouse=True)
-def dummy_repo_path(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp("git_repo")
+@pytest.fixture(name="depl")
+def fixture_depl() -> DotMap:
+    return DotMap(
+        first={
+            "id": "c5027735a24c3daa00fbc655b8aa20f3",
+            "alias": "MyApp123-dev",
+            "path": "clusters/dev/Heart.py",
+            "pubkey": "age17qyz09pyjxfwyxdjwyugw7wxy8gtk0gc23t7y9qqxccg6hr8uyqsqlmh2k"
+        },
+        second={
+            "id": "846ef331b4e9df983d8e6b9905d518e1",
+            "alias": "MyApp123-prod",
+            "path": "clusters/prod/Heart.py",
+            "pubkey": "age1v0rxka5x7haf928yszv97eprf726fnwdqklnpf88frqqgec9mqysuzj9q6"
+        }
+    )
+
+
+@pytest.fixture(name="temp_repo")
+def fixture_temp_repo(tmp_path: Path, depl: DotMap) -> Callable:
     os.chdir(tmp_path)
     (tmp_path / ".git").mkdir()
-    heart_path = tmp_path / "clusters/dev"
-    heart_path.mkdir(parents=True)
-    (heart_path / "Heart.py").touch()
+    for cluster in ["dev", "prod"]:
+        path = tmp_path / f"clusters/{cluster}"
+        path.mkdir(parents=True)
+        (path / "Heart.py").touch()
 
-    kupydo_file = tmp_path / ".kupydo"
-    kupydo_content = {
-        "deployments": [
-            {
-                "id": "c5027735a24c3daa00fbc655b8aa20f3",
-                "alias": "MyApp-123",
-                "path": "clusters/dev/Heart.py",
-                "pubkey": "age17qyz09pyjxfwyxdjwyugw7wxy8gtk0gc23t7y9qqxccg6hr8uyqsqlmh2k"
-            }
-        ]
-    }
-    with kupydo_file.open("w") as file:
-        dump = orjson.dumps(kupydo_content)
-        file.write(dump.decode("utf-8"))
+    def custom_kupydo_file(garbage: bool = False,
+                           dupe_key: Literal["id", "alias", "path", "pubkey"] = None):
+        kupydo_file = tmp_path / ".kupydo"
+        with kupydo_file.open("w") as file:
+            if garbage:
+                content = '{"deployments" : [error]}'
+            else:
+                content = orjson.dumps({
+                    "deployments": [
+                        depl.first,
+                        depl.second if not dupe_key else {
+                            **depl.second,
+                            dupe_key: depl.first[dupe_key]
+                        }
+                    ]
+                }).decode("utf-8")
+            file.write(content)
 
-    yield
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    return custom_kupydo_file
 
 
-def test_read_file_contents():
+def test_read_file_contents(temp_repo: Callable, depl: DotMap):
+    temp_repo()
     conf = ProjectPublicConfig()
-    dpl = conf.deployments[0]
-    assert dpl.id == "c5027735a24c3daa00fbc655b8aa20f3"
-    assert dpl.alias == "MyApp-123"
-    assert dpl.path == "clusters/dev/Heart.py"
-    assert dpl.pubkey == "age17qyz09pyjxfwyxdjwyugw7wxy8gtk0gc23t7y9qqxccg6hr8uyqsqlmh2k"
+    for pd, fd in zip(conf.deployments, depl.values()):
+        for key in ["id", "alias", "path", "pubkey"]:
+            assert getattr(pd, key) == fd[key]
 
 
-def test_write_file_contents_and_update():
+def test_write_file_contents_and_update(temp_repo: Callable):
+    temp_repo()
     conf1 = ProjectPublicConfig()
-    dpl1 = conf1.deployments[0]
-    assert dpl1.alias == "MyApp-123"
+    assert conf1.deployments[0].alias == "MyApp123-dev"
+    assert conf1.deployments[1].alias == "MyApp123-prod"
 
     conf2 = ProjectPublicConfig()
-    dpl2 = conf2.deployments[0]
-    dpl2.alias = "NewAlias"
+    conf2.deployments[0].alias = "NewAlias"
     conf2.write()
 
     conf1.update()
-    dpl1 = conf1.deployments[0]
-    assert dpl1.alias == "NewAlias"
+    assert conf1.deployments[0].alias == "NewAlias"
+    assert conf1.deployments[1].alias == "MyApp123-prod"
+
+
+def test_duplicate_id(temp_repo: Callable):
+    temp_repo(dupe_key="id")
+    errmsg = "duplicate id values not allowed in public config file."
+    with pytest.raises(ValueError, match=errmsg):
+        ProjectPublicConfig()
+
+
+def test_duplicate_alias(temp_repo: Callable):
+    temp_repo(dupe_key="alias")
+    errmsg = "duplicate alias values not allowed in public config file."
+    with pytest.raises(ValueError, match=errmsg):
+        ProjectPublicConfig()
+
+
+def test_duplicate_path(temp_repo: Callable):
+    temp_repo(dupe_key="path")
+    errmsg = "duplicate path values not allowed in public config file."
+    with pytest.raises(ValueError, match=errmsg):
+        ProjectPublicConfig()
+
+
+def test_duplicate_pubkey(temp_repo: Callable):
+    temp_repo(dupe_key="pubkey")
+    errmsg = "duplicate pubkey values not allowed in public config file."
+    with pytest.raises(ValueError, match=errmsg):
+        ProjectPublicConfig()
+
+
+def test_garbage_file_contents(temp_repo: Callable):
+    temp_repo(garbage=True)
+    with pytest.raises(orjson.JSONDecodeError):
+        ProjectPublicConfig()

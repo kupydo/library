@@ -13,7 +13,7 @@ import re
 import orjson
 import string
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from kupydo.internal import utils
 
 
@@ -73,6 +73,16 @@ class DeploymentPublicDetails(BaseModel):
 
 class ProjectPublicConfig(BaseModel):
 	deployments: list[DeploymentPublicDetails]
+
+	@model_validator(mode="before")
+	@classmethod
+	def check_duplicates(cls, data: dict) -> dict:
+		if data:
+			for key in ["id", "alias", "path", "pubkey"]:
+				ids = [item[key] for item in data["deployments"]]
+				assert len(set(ids)) == len(ids), \
+					f"duplicate {key} values not allowed in public config file."
+		return data
 
 	def __init__(self) -> None:
 		super().__init__(**self._read())

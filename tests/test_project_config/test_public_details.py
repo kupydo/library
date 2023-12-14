@@ -28,8 +28,8 @@ def setup_test_environment(tmp_path_factory):
     shutil.rmtree(tmp_path, ignore_errors=True)
 
 
-@pytest.fixture()
-def valid_data() -> dict:
+@pytest.fixture(name="valid_data")
+def fixture_valid_data() -> dict:
     return {
         "id": "c5027735a24c3daa00fbc655b8aa20f3",
         "alias": "MyApp-123",
