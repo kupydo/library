@@ -13,23 +13,28 @@ import base64
 import secrets
 
 
-__all__ = ["DerivedArgonKey"]
+__all__ = ["ArgonKDF"]
 
 
-class DerivedArgonKey:
+class ArgonKDF:
 	__slots__ = (
 		"hash",
 		"salt"
 	)
 
+	@property
+	def _sb_len_(self) -> int:
+		# 48-len salt_bytes results in a 64-len base64 salt str.
+		# Do not reduce this value without increasing memory_cost.
+		return 48
+
 	def __init__(self, password: str, *, salt: str = None, testing: bool = False) -> None:
-		if not salt:
-			salt_bytes = secrets.token_bytes(32)
-		else:
-			salt_bytes = base64.b64decode(salt)
+		dec, gen = base64.b64decode, secrets.token_bytes
+		salt_bytes = dec(salt) if salt else gen(self._sb_len_)
+
 		argon = argon2.PasswordHasher(
-			time_cost=1 if testing else 2,
-			memory_cost=2 ** (10 if testing else 22),
+			memory_cost=2 ** (10 if testing else 23),
+			time_cost=1,
 			parallelism=4,
 			hash_len=64,
 			salt_len=len(salt_bytes)
