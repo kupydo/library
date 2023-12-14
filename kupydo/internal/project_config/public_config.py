@@ -11,35 +11,52 @@
 from __future__ import annotations
 import re
 import orjson
-from pathlib import Path
+import string
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from pydantic import BaseModel, field_validator
 from kupydo.internal import utils
 
 
-__all__ = ["DeploymentDetails", "ProjectConfig"]
+__all__ = ["DeploymentPublicDetails", "ProjectPublicConfig"]
 
 
-CONFIG_FILE_NAME = '.kupydo'
-
-
-class DeploymentDetails(BaseModel):
-	name: str
+class DeploymentPublicDetails(BaseModel):
+	id: str
+	alias: str
 	path: str
 	pubkey: str
 
-	@field_validator("name")
+	@field_validator("id")
 	@classmethod
-	def validate_name(cls, v: str) -> str:
-		assert len(v) <= 20, "name must be less than or equal to 20 characters."
-		assert v.isalnum(), "name must consist of alphanumeric characters: a-z, 0-9."
+	def validate_id(cls, v: str) -> str:
+		assert len(v) == 32, \
+			"id length must equal 32 characters."
+		assert all(c in '0123456789abcdef' for c in v), \
+			"id must consist of valid hex characters."
+		return v
+
+	@field_validator("alias")
+	@classmethod
+	def validate_alias(cls, v: str) -> str:
+		valid_chars = string.ascii_letters + string.digits + '-'
+		assert len(v) <= 20, \
+			"alias length must be less than or equal to 20 characters."
+		assert all(c in valid_chars for c in v), \
+			"alias must consist of any valid characters: a-z, A-Z, 0-9, '-'."
 		return v
 
 	@field_validator("path", mode="before")
 	@classmethod
 	def validate_path(cls, v: str) -> str:
+		is_abs_pp = PurePosixPath(v).is_absolute()
+		is_abs_wp = PureWindowsPath(v).is_absolute()
+		assert not any([is_abs_pp, is_abs_wp]), \
+			"path must be a relative path."
 		path = utils.repo_rel_to_abs_path(v)
-		assert path.is_file(), "path cannot point to a non-existent file."
-		assert path.name == "Heart.py", "path must point to a file named 'Heart.py'."
+		assert path.is_file(), \
+			"path cannot point to a non-existent file."
+		assert path.name == "Heart.py", \
+			"path must point to a file named 'Heart.py'."
 		return v
 
 	@field_validator("pubkey")
@@ -54,8 +71,8 @@ class DeploymentDetails(BaseModel):
 		return v
 
 
-class ProjectConfig(BaseModel):
-	deployments: list[DeploymentDetails]
+class ProjectPublicConfig(BaseModel):
+	deployments: list[DeploymentPublicDetails]
 
 	def __init__(self) -> None:
 		super().__init__(**self._read())
@@ -63,7 +80,7 @@ class ProjectConfig(BaseModel):
 	@staticmethod
 	def _get_config_path() -> Path:
 		repo_path = utils.find_repo_path()
-		config_path = repo_path / CONFIG_FILE_NAME
+		config_path = repo_path / '.kupydo'
 		config_path.touch(exist_ok=True)
 		return config_path
 
@@ -75,7 +92,7 @@ class ProjectConfig(BaseModel):
 		return orjson.loads(contents)
 
 	def write(self) -> None:
-		path = self._get_config_file_path()
+		path = self._get_config_path()
 		dump = orjson.dumps(
 			self.model_dump(mode='json'),
 			option=orjson.OPT_INDENT_2
@@ -84,6 +101,6 @@ class ProjectConfig(BaseModel):
 			file.write(dump)
 
 	def update(self) -> None:
-		config = ProjectConfig()
+		config = ProjectPublicConfig()
 		for k, v in vars(config).items():
 			setattr(self, k, v)
