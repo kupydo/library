@@ -9,11 +9,13 @@
 #   SPDX-License-Identifier: MIT
 #
 from .argon_kdf import *
+from .base_config import *
 from .public_config import *
 
 
 __all__ = [
 	"DerivedArgonKey",
+	"ProjectBaseConfig",
 	"DeploymentPublicDetails",
 	"ProjectPublicConfig"
 ]

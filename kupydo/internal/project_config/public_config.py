@@ -10,30 +10,20 @@
 #
 from __future__ import annotations
 import re
-import orjson
 import string
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import field_validator, model_validator
 from kupydo.internal import utils
+from .base_config import *
 
 
 __all__ = ["DeploymentPublicDetails", "ProjectPublicConfig"]
 
 
-class DeploymentPublicDetails(BaseModel):
-	id: str
+class DeploymentPublicDetails(DeploymentBaseDetails):
 	alias: str
 	path: str
 	pubkey: str
-
-	@field_validator("id")
-	@classmethod
-	def validate_id(cls, v: str) -> str:
-		assert len(v) == 32, \
-			"id length must equal 32 characters."
-		assert all(c in '0123456789abcdef' for c in v), \
-			"id must consist of valid hex characters."
-		return v
 
 	@field_validator("alias")
 	@classmethod
@@ -71,7 +61,7 @@ class DeploymentPublicDetails(BaseModel):
 		return v
 
 
-class ProjectPublicConfig(BaseModel):
+class ProjectPublicConfig(ProjectBaseConfig):
 	deployments: list[DeploymentPublicDetails]
 
 	@model_validator(mode="before")
@@ -84,33 +74,9 @@ class ProjectPublicConfig(BaseModel):
 					f"duplicate {key} values not allowed in public config file."
 		return data
 
-	def __init__(self) -> None:
-		super().__init__(**self._read())
-
 	@staticmethod
 	def _get_config_path() -> Path:
 		repo_path = utils.find_repo_path()
 		config_path = repo_path / '.kupydo'
 		config_path.touch(exist_ok=True)
 		return config_path
-
-	@classmethod
-	def _read(cls) -> dict:
-		path = cls._get_config_path()
-		with path.open('rb') as file:
-			contents = file.read() or b'{}'
-		return orjson.loads(contents)
-
-	def write(self) -> None:
-		path = self._get_config_path()
-		dump = orjson.dumps(
-			self.model_dump(mode='json'),
-			option=orjson.OPT_INDENT_2
-		)
-		with path.open('wb') as file:
-			file.write(dump)
-
-	def update(self) -> None:
-		config = ProjectPublicConfig()
-		for k, v in vars(config).items():
-			setattr(self, k, v)

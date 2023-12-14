@@ -197,9 +197,6 @@ fabric.properties
 # General folder to exclude
 .no-vcs
 
-# Kupydo project conf file is not needed
-/.kupydo
-
 # Crypto tool binaries are downloaded by user
 /kupydo/internal/bin/*
 
