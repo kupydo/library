@@ -9,7 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationInfo, field_validator
 from Cryptodome.Cipher import AES
 
 
@@ -20,6 +20,19 @@ class AESCipher(BaseModel):
 	ciphertext: str
 	nonce: str
 	tag: str
+
+	@field_validator("ciphertext", "nonce", "tag")
+	@classmethod
+	def validate_ciphertext(cls, v: str, info: ValidationInfo) -> str:
+		if info.field_name in ["nonce", "tag"]:
+			assert len(v) == 32, \
+				f"AES {info.field_name} must be 32 chars in length."
+		elif info.field_name == "ciphertext":
+			assert len(v) > 0, \
+				"AES ciphertext length must be greater than 0."
+		assert all([c in '0123456789abcdef' for c in v]), \
+			f"AES {info.field_name} must only consist of hex chars."
+		return v
 
 	@classmethod
 	def encrypt(cls, key: bytes, plaintext: str) -> AESCipher | None:
