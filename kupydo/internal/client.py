@@ -9,8 +9,8 @@
 #   SPDX-License-Identifier: MIT
 #
 from kubernetes_asyncio import client
+from kupydo.config import autoload_config
 from .response import Response, error_handler
-from .configs import autoload_config
 from .base import KupydoBaseModel
 from .types import RawModel
 
