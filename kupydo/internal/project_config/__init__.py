@@ -17,8 +17,8 @@ from .public_config import *
 __all__ = [
 	"AESCipher",
 	"ArgonKDF",
-	"DeploymentBaseDetails",
+	"DeploymentBaseData",
 	"ProjectBaseConfig",
-	"DeploymentPublicDetails",
+	"DeploymentPublicData",
 	"ProjectPublicConfig"
 ]

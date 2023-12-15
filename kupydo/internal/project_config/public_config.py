@@ -17,10 +17,10 @@ from kupydo.internal import utils
 from .base_config import *
 
 
-__all__ = ["DeploymentPublicDetails", "ProjectPublicConfig"]
+__all__ = ["DeploymentPublicData", "ProjectPublicConfig"]
 
 
-class DeploymentPublicDetails(DeploymentBaseDetails):
+class DeploymentPublicData(DeploymentBaseData):
 	alias: str
 	path: str
 	pubkey: str
@@ -62,15 +62,15 @@ class DeploymentPublicDetails(DeploymentBaseDetails):
 
 
 class ProjectPublicConfig(ProjectBaseConfig):
-	deployments: list[DeploymentPublicDetails]
+	deployments: list[DeploymentPublicData]
 
 	@model_validator(mode="before")
 	@classmethod
 	def check_duplicates(cls, data: dict) -> dict:
 		if data:
 			for key in ["id", "alias", "path", "pubkey"]:
-				ids = [item[key] for item in data["deployments"]]
-				assert len(set(ids)) == len(ids), \
+				values = [item[key] for item in data["deployments"]]
+				assert len(set(values)) == len(values), \
 					f"duplicate {key} values not allowed in public config file."
 		return data
 
