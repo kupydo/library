@@ -73,6 +73,6 @@ class ConfigMap(KupydoNamespacedModel):
         if files:
             encoded_files = dict()
             for file_name in files:
-                data = utils.read_encode_file(file_name)
+                data = utils.read_encode_rel_file(file_name)
                 encoded_files[file_name] = data
             return encoded_files

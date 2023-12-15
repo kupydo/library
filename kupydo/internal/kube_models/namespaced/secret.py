@@ -93,7 +93,7 @@ class BaseSecret(KupydoNamespacedModel):
         file_path, from_line = utils.first_external_caller()
         lines = utils.read_cached_file_lines(file_path)
         lineno = sec_ops.find_kwarg_line(lines, from_line, keyword, value)
-        secret = utils.read_encode_file(value) if from_file else value
+        secret = utils.read_encode_rel_file(value) if from_file else value
 
         if GlobalRegistry.is_enabled():
             sfd = sec_ops.SecretFieldDetails(

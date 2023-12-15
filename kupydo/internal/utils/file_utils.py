@@ -10,24 +10,25 @@
 #
 import base64
 import functools
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from kupydo.internal import errors
 from kupydo.internal import utils
 
 
 __all__ = [
-    "read_encode_file",
+    "read_encode_rel_file",
     "read_cached_file_lines"
 ]
 
 
-def read_encode_file(file_path: Path | str) -> str:
-    target = Path(file_path)
+def read_encode_rel_file(rel_fp: str) -> str:
+    for path_cls in [PurePosixPath, PureWindowsPath]:
+        if path_cls(rel_fp).is_absolute():
+            raise errors.PathNotRelativeError(rel_fp)
 
-    if isinstance(file_path, str) and file_path.startswith('.'):
-        caller_path = utils.first_external_caller()[0]
-        target = caller_path.parent / file_path
+    caller_path = utils.first_external_caller()[0]
+    target = (caller_path.parent / rel_fp).resolve()
 
-    target = target.resolve(strict=True)
     with target.open('rb') as file:
         return base64.b64encode(file.read()).decode()
 

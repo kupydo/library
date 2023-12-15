@@ -21,7 +21,8 @@ __all__ = [
     "RepoNotFoundError",
     "InvalidPackageError",
     "AssetNotFoundError",
-    "BadStatusFileError"
+    "BadStatusFileError",
+    "PathNotRelativeError"
 ]
 
 
@@ -81,3 +82,8 @@ class AssetNotFoundError(KupydoBaseError):
 class BadStatusFileError(KupydoBaseError):
     def __init__(self):
         super().__init__("\nNot allowed to write garbage into the status file!")
+
+
+class PathNotRelativeError(KupydoBaseError):
+    def __init__(self, path: str):
+        super().__init__(f"\nCannot assign absolute path as model field value:\n{path}")
