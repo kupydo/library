@@ -48,17 +48,17 @@ class ProjectBaseConfig(ABC, BaseModel):
 
 	@staticmethod
 	@abstractmethod
-	def _get_config_path() -> Path: ...
+	def get_config_path() -> Path: ...
 
 	@classmethod
 	def _read(cls) -> dict:
-		path = cls._get_config_path()
+		path = cls.get_config_path()
 		with path.open('rb') as file:
 			contents = file.read() or b'{}'
 		return orjson.loads(contents)
 
 	def write(self) -> None:
-		path = self._get_config_path()
+		path = self.get_config_path()
 		dump = orjson.dumps(
 			self.model_dump(mode='json'),
 			option=orjson.OPT_INDENT_2

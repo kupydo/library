@@ -11,6 +11,7 @@
 from .aes_cipher import *
 from .argon_kdf import *
 from .base_config import *
+from .private_config import *
 from .public_config import *
 
 
@@ -19,6 +20,8 @@ __all__ = [
 	"ArgonKDF",
 	"DeploymentBaseData",
 	"ProjectBaseConfig",
+	"DeploymentPrivateData",
+	"ProjectPrivateConfig",
 	"DeploymentPublicData",
 	"ProjectPublicConfig"
 ]

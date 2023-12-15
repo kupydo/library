@@ -75,7 +75,7 @@ class ProjectPublicConfig(ProjectBaseConfig):
 		return data
 
 	@staticmethod
-	def _get_config_path() -> Path:
+	def get_config_path() -> Path:
 		repo_path = utils.find_repo_path()
 		config_path = repo_path / '.kupydo'
 		config_path.touch(exist_ok=True)

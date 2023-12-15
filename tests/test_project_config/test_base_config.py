@@ -44,7 +44,7 @@ def fixture_temp_repo(tmp_path: Path, depl: DotMap) -> Callable:
 
         class RealBaseConfig(ProjectBaseConfig):
             @staticmethod
-            def _get_config_path() -> Path:
+            def get_config_path() -> Path:
                 return base_file
 
         return RealBaseConfig
@@ -58,7 +58,7 @@ def test_read_file_contents(temp_repo: Callable, depl: DotMap):
         assert getattr(pd, "id") == fd["id"]
 
 
-def test_write_file_contents_and_update(temp_repo: Callable, depl: DotMap):
+def test_write_and_update(temp_repo: Callable, depl: DotMap):
     rbc_class = temp_repo()
     new_id = "a" * 32
 
