@@ -18,7 +18,7 @@ from semver import Version
 from kupydo.internal import errors
 from .local_utils import *
 from .status_file import *
-from .classes import *
+from .et_models import *
 
 
 __all__ = [

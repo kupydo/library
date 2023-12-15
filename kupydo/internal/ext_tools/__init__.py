@@ -8,9 +8,9 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from .classes import *
+from .et_models import *
 from .local_utils import *
-from .operations import *
+from .asset_ops import *
 from .status_file import *
 
 

@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import date
 from kupydo.internal import utils
 from kupydo.internal import errors
-from .classes import LatestRelease
+from .et_models import LatestRelease
 from .local_utils import *
 
 
