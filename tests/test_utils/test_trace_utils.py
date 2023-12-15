@@ -15,8 +15,8 @@ import subprocess
 from pathlib import Path
 
 
-@pytest.fixture
-def script() -> str:
+@pytest.fixture(name="script")
+def fixture_script() -> str:
 	pkgs = site.getsitepackages()
 	lib = Path(__file__).parents[2].as_posix()
 	pkgs.append(lib)

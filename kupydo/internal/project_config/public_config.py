@@ -38,10 +38,9 @@ class DeploymentPublicData(DeploymentBaseData):
 	@field_validator("path", mode="before")
 	@classmethod
 	def validate_path(cls, v: str) -> str:
-		is_abs_pp = PurePosixPath(v).is_absolute()
-		is_abs_wp = PureWindowsPath(v).is_absolute()
-		assert not any([is_abs_pp, is_abs_wp]), \
-			"path must be a relative path."
+		for path_cls in [PurePosixPath, PureWindowsPath]:
+			assert not path_cls(v).is_absolute(), \
+				"path must be a relative path."
 		path = utils.repo_rel_to_abs_path(v)
 		assert path.is_file(), \
 			"path cannot point to a non-existent file."

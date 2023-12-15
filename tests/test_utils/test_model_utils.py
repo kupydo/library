@@ -13,8 +13,8 @@ from dotmap import DotMap
 from kupydo.internal import utils
 
 
-@pytest.fixture
-def base():
+@pytest.fixture(name="base")
+def fixture_base():
     return DotMap(
         name="aaaaa",
         namespace="bbbbb",
@@ -34,8 +34,8 @@ def base():
     )
 
 
-@pytest.fixture
-def update():
+@pytest.fixture(name="update")
+def fixture_update():
     return DotMap(
         name="iiiii",
         namespace="jjjjj",
@@ -51,8 +51,8 @@ def update():
     )
 
 
-@pytest.fixture
-def exclude():
+@pytest.fixture(name="exclude")
+def fixture_exclude():
     return DotMap(
         name=True,
         namespace=True
