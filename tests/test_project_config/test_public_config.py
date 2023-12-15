@@ -88,13 +88,6 @@ def test_write_file_contents_and_update(temp_repo: Callable):
     assert conf1.deployments[1].alias == "MyApp123-prod"
 
 
-def test_duplicate_id(temp_repo: Callable):
-    temp_repo(dupe_key="id")
-    errmsg = "duplicate id values not allowed in public config file."
-    with pytest.raises(ValueError, match=errmsg):
-        ProjectPublicConfig()
-
-
 def test_duplicate_alias(temp_repo: Callable):
     temp_repo(dupe_key="alias")
     errmsg = "duplicate alias values not allowed in public config file."

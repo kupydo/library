@@ -11,7 +11,7 @@
 from __future__ import annotations
 import orjson
 from pathlib import Path
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from abc import ABC, abstractmethod
 
 
@@ -32,6 +32,17 @@ class DeploymentBaseData(BaseModel):
 
 
 class ProjectBaseConfig(ABC, BaseModel):
+	deployments: list[DeploymentBaseData]
+
+	@model_validator(mode="before")
+	@classmethod
+	def check_duplicates(cls, data: dict) -> dict:
+		if data:
+			values = [item["id"] for item in data["deployments"]]
+			assert len(set(values)) == len(values), \
+				f"duplicate id values not allowed in public config file."
+		return data
+
 	def __init__(self) -> None:
 		super().__init__(**self._read())
 

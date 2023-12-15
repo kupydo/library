@@ -68,7 +68,7 @@ class ProjectPublicConfig(ProjectBaseConfig):
 	@classmethod
 	def check_duplicates(cls, data: dict) -> dict:
 		if data:
-			for key in ["id", "alias", "path", "pubkey"]:
+			for key in ["alias", "path", "pubkey"]:
 				values = [item[key] for item in data["deployments"]]
 				assert len(set(values)) == len(values), \
 					f"duplicate {key} values not allowed in public config file."
