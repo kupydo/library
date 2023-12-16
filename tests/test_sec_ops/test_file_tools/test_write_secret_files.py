@@ -41,8 +41,11 @@ def test_with_valid_data(mocker, tmp_path):
 
 	with secret_file.open('rb') as file:
 		data = orjson.loads(file.read())
-		assert data["file_path"] == rel_path
-		assert data["enc_tag"] == "id1"
+
+	sfd = sec_ops.SecretFieldDetails(**data)
+	assert sfd.file_path.as_posix() == rel_path
+	assert sfd.secret_value == "secret"
+	assert sfd.enc_tag == "id1"
 
 
 def test_with_empty_list(tmp_path):
