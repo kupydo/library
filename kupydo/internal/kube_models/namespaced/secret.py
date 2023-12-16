@@ -265,8 +265,9 @@ class Secret:
 
     def __init__(self) -> None:
         """
-        The Secret class cannot be instantiated, because it's a container\n
-        for BaseSecret subclasses. Instead, use any of the subclasses with:\n
+        The Secret class cannot be instantiated,\n
+        because it's a container for BaseSecret subclasses.\n
+        Instead, use any of the subclasses with:\n
         Secret.Subclass(<any keyword args>)
 
         :raises SystemExit: Always
