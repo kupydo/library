@@ -19,6 +19,8 @@ __all__ = [
 	"AssetType",
 	"ReleaseAsset",
 	"LatestRelease",
+	"AgePublicKey",
+	"AgeSecretKey",
 	"get_bin_path",
 	"get_tool_posix_path",
 	"get_pc_opsys_arch",

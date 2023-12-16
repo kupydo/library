@@ -26,7 +26,9 @@ __all__ = [
 	"ExtTool",
 	"AssetType",
 	"ReleaseAsset",
-	"LatestRelease"
+	"LatestRelease",
+	"AgePublicKey",
+	"AgeSecretKey"
 ]
 
 
@@ -109,3 +111,27 @@ class LatestRelease(BaseModel):
 			item.type is not None and
 			'json' not in item.name
 		]
+
+
+class AgePublicKey(BaseModel):
+	value: str
+
+	@field_validator("value")
+	@classmethod
+	def validate_value(cls, v: str) -> str:
+		pattern = r'^age[0-9a-z]{59}$'
+		assert re.match(pattern, v) is not None, \
+			"value is not a valid AGE public key."
+		return v
+
+
+class AgeSecretKey(BaseModel):
+	value: str
+
+	@field_validator("value")
+	@classmethod
+	def validate_value(cls, v: str) -> str:
+		pattern = r"^AGE-SECRET-KEY-[0-9A-Z]{59}$"
+		assert re.match(pattern, v) is not None, \
+			"value is not a valid AGE secret key."
+		return v
