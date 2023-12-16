@@ -265,14 +265,14 @@ class Secret:
 
     def __init__(self) -> None:
         """
-        KupydoError:\n
-        The Secret class is a collection of BaseSecret subclasses and cannot be instantiated.\n
-        Instead, use any of the subclasses with: Secret.Subclass(<any keyword args>)
+        The Secret class cannot be instantiated, because it's a container\n
+        for BaseSecret subclasses. Instead, use any of the subclasses with:\n
+        Secret.Subclass(<any keyword args>)
 
         :raises SystemExit: Always
         """
         raise SystemExit(
             "KupydoError:\n"
-            "The Secret class is a collection of BaseSecret subclasses and cannot be instantiated.\n"
+            "The Secret class cannot be instantiated, because it's a container for BaseSecret subclasses."
             "Instead, use any of the subclasses with: Secret.Subclass(<any keyword args>)"
         )
