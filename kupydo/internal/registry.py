@@ -33,25 +33,26 @@ class GlobalRegistry:
     _templates: _ResourceTemplates = list()
     _secrets: dict[str, SecretFieldDetails] = dict()
     _enabled: bool = False
+    _silent: bool = False
 
     @staticmethod
     def disabled_check(func: Callable) -> Callable:
         def closure(cls, *args, **kwargs):
-            if not cls._enabled:
+            if not cls._enabled and not cls._silent:
                 raise DisabledRegistryError
             return func(cls, *args, **kwargs)
         return closure
 
     @disabled_check
     def __new__(cls, *, namespace: str = 'default') -> LocalRegistry:
-        if not cls._templates:
+        if not cls._templates and not cls._silent:
             raise ResourcesMissingError
         return LocalRegistry(cls._templates, namespace)
 
     @classmethod
     @disabled_check
     def load_resources(cls, path: Path) -> None:
-        if not is_path_absolute(path):
+        if not is_path_absolute(path) and not cls._silent:
             raise InvalidPathTypeError(path, "absolute")
         cls.reset()
         spec = imp.spec_from_file_location(path.stem, path)
@@ -72,14 +73,14 @@ class GlobalRegistry:
     @classmethod
     @disabled_check
     def get_all_secrets(cls) -> list[SecretFieldDetails]:
-        if len(cls._secrets) == 0:
+        if len(cls._secrets) == 0 and not cls._silent:
             raise SecretNotFoundError
         return list(cls._secrets.values())
 
     @classmethod
     @disabled_check
     def get_secret(cls, secret_id: str) -> SecretFieldDetails:
-        if secret_id not in cls._secrets:
+        if secret_id not in cls._secrets and not cls._silent:
             raise SecretNotFoundError(secret_id)
         return cls._secrets.get(secret_id)
 
@@ -90,12 +91,20 @@ class GlobalRegistry:
         cls._secrets = dict()
 
     @classmethod
-    def set_enabled(cls, *, state: bool) -> None:
+    def set_enabled(cls, state: bool) -> None:
         cls._enabled = state
 
     @classmethod
     def is_enabled(cls) -> bool:
         return cls._enabled
+
+    @classmethod
+    def set_silent(cls, state: bool) -> None:
+        cls._silent = state
+
+    @classmethod
+    def is_silent(cls) -> bool:
+        return cls._silent
 
 
 class LocalRegistry(list):

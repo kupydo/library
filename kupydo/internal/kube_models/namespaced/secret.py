@@ -86,9 +86,9 @@ class BaseSecret(KupydoNamespacedModel):
 
     @staticmethod
     def _resolve_secret(keyword: str, value: str, from_file: bool = False) -> str:
-        if enc_tag := sec_ops.unwrap_enc_tag(value):  # check if value is enc_tag
-            secret = GlobalRegistry.get_secret(enc_tag)
-            return secret.secret_value
+        if enc_tag := sec_ops.unwrap_enc_tag(value):
+            if secret := GlobalRegistry.get_secret(enc_tag):
+                return secret.secret_value
 
         ext_file, from_line = utils.first_external_caller()
         lines = utils.read_cached_file_lines(ext_file)
