@@ -9,6 +9,7 @@
 #   SPDX-License-Identifier: MIT
 #
 from pathlib import Path
+from typing import Literal
 
 
 __all__ = [
@@ -22,7 +23,7 @@ __all__ = [
     "InvalidPackageError",
     "AssetNotFoundError",
     "BadStatusFileError",
-    "PathNotRelativeError"
+    "InvalidPathTypeError"
 ]
 
 
@@ -84,6 +85,6 @@ class BadStatusFileError(KupydoBaseError):
         super().__init__("\nNot allowed to write garbage into the status file!")
 
 
-class PathNotRelativeError(KupydoBaseError):
-    def __init__(self, path: str):
-        super().__init__(f"\nCannot assign absolute path as model field value:\n{path}")
+class InvalidPathTypeError(KupydoBaseError):
+    def __init__(self, path: Path | str, expected: Literal["absolute", "relative"]):
+        super().__init__(f"\nPath is not {expected}: {path}")

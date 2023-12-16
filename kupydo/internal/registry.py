@@ -9,10 +9,13 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations
+import sys
+import importlib.util as imp
 from pathlib import Path
 from dotmap import DotMap
 from typing import Callable, Type, Any
 from .sec_ops import SecretFieldDetails
+from .utils import is_path_absolute
 from .errors import *
 
 
@@ -48,9 +51,13 @@ class GlobalRegistry:
     @classmethod
     @disabled_check
     def load_resources(cls, path: Path) -> None:
+        if not is_path_absolute(path):
+            raise InvalidPathTypeError(path, "absolute")
         cls.reset()
-        print(path)
-        #  TODO: import modules with importlib
+        spec = imp.spec_from_file_location(path.stem, path)
+        module = imp.module_from_spec(spec)
+        sys.modules[path.stem] = module
+        spec.loader.exec_module(module)
 
     @classmethod
     @disabled_check

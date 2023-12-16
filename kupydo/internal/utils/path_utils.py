@@ -40,7 +40,7 @@ def find_repo_path() -> Path:
     raise RepoNotFoundError
 
 
-def is_path_absolute(path: str) -> bool:
+def is_path_absolute(path: Path | str) -> bool:
     for path_cls in [PurePosixPath, PureWindowsPath]:
         if path_cls(path).is_absolute():
             return True
