@@ -9,10 +9,12 @@
 #   SPDX-License-Identifier: MIT
 #
 from __future__ import annotations as anno
+from pathlib import Path
 from dotmap import DotMap
 from kubernetes_asyncio import client
 from kupydo.internal.types import *
 from kupydo.internal.base import *
+from kupydo.internal import errors
 from kupydo.internal import utils
 
 
@@ -21,7 +23,7 @@ __all__ = ["ConfigMapValues", "ConfigMap"]
 
 class ConfigMapValues(KupydoBaseValues):
     data: OptionalDictStr
-    binary_data: OptionalListStr
+    binary_data: OptionalDictStr
     immutable: OptionalBool
 
 
@@ -72,7 +74,11 @@ class ConfigMap(KupydoNamespacedModel):
     def _read_binary_files(files: list[str] | None) -> dict[str, str] | None:
         if files:
             encoded_files = dict()
-            for file_name in files:
-                data = utils.read_encode_rel_file(file_name)
-                encoded_files[file_name] = data
+            for file_path in files:
+                if utils.is_path_absolute(file_path):
+                    raise errors.InvalidPathTypeError(file_path, "relative")
+                ext_file = utils.first_external_caller()[0]
+                bin_file = (ext_file.parent / file_path).resolve()
+                data = utils.read_encode_b64_file(bin_file)
+                encoded_files[Path(file_path).name] = data
             return encoded_files

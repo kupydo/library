@@ -17,7 +17,8 @@ from .trace_utils import *
 
 __all__ = [
 	"match_dict_structure",
-	"read_encode_rel_file",
+	"read_encode_b64_file",
+	"write_decode_b64_file",
 	"read_cached_file_lines",
 	"generate_name",
 	"deep_merge",

@@ -12,25 +12,34 @@ import base64
 import functools
 from pathlib import Path
 from kupydo.internal import errors
-from .trace_utils import first_external_caller
 from .path_utils import is_path_absolute
 
 
 __all__ = [
-    "read_encode_rel_file",
+    "read_encode_b64_file",
+    "write_decode_b64_file",
     "read_cached_file_lines"
 ]
 
 
-def read_encode_rel_file(rel_fp: str) -> str:
-    if is_path_absolute(rel_fp):
-        raise errors.PathNotRelativeError(rel_fp)
-
-    caller_path = first_external_caller()[0]
-    target = (caller_path.parent / rel_fp).resolve()
-
-    with target.open('rb') as file:
+def read_encode_b64_file(abs_fp: Path | str) -> str:
+    abs_fp = Path(abs_fp)
+    if not is_path_absolute(abs_fp):
+        raise errors.InvalidPathTypeError(
+            abs_fp.as_posix(), "absolute"
+        )
+    with abs_fp.open('rb') as file:
         return base64.b64encode(file.read()).decode()
+
+
+def write_decode_b64_file(abs_fp: Path | str, b64_data: str) -> None:
+    abs_fp = Path(abs_fp)
+    if not is_path_absolute(abs_fp):
+        raise errors.InvalidPathTypeError(
+            abs_fp.as_posix(), "absolute"
+        )
+    with abs_fp.open('wb') as file:
+        file.write(base64.b64decode(b64_data.encode()))
 
 
 @functools.cache

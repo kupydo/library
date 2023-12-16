@@ -19,12 +19,13 @@ def test_with_valid_data(mocker, tmp_path):
 	rel_path = 'clusters/staging/Heart.py'
 	sfd_list = [
 		sec_ops.SecretFieldDetails(
+			enc_tag="id1",
 			file_path=heart_path,
 			line_number=1,
 			field_keyword="key",
 			field_value="value",
 			secret_value="secret",
-			enc_tag="id1"
+			from_file=False
 		)
 	]
 	mocked_rel_path = mocker.patch.object(
