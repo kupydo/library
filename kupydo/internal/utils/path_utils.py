@@ -8,15 +8,16 @@
 #
 #   SPDX-License-Identifier: MIT
 #
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from kupydo.internal.errors import *
 
 
 __all__ = [
     "find_lib_path",
     "find_repo_path",
+    "is_path_absolute",
     "repo_abs_to_rel_path",
-    "repo_rel_to_abs_path"
+    "repo_rel_to_abs_path",
 ]
 
 
@@ -37,6 +38,13 @@ def find_repo_path() -> Path:
             return current_path
         current_path = current_path.parent
     raise RepoNotFoundError
+
+
+def is_path_absolute(path: str) -> bool:
+    for path_cls in [PurePosixPath, PureWindowsPath]:
+        if path_cls(path).is_absolute():
+            return True
+    return False
 
 
 def repo_abs_to_rel_path(abs_path: Path) -> str:

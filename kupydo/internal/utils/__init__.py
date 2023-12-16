@@ -23,6 +23,7 @@ __all__ = [
 	"deep_merge",
 	"find_lib_path",
 	"find_repo_path",
+	"is_path_absolute",
 	"repo_abs_to_rel_path",
 	"repo_rel_to_abs_path",
 	"extract_tb_line",

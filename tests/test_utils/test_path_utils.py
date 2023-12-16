@@ -34,3 +34,16 @@ def test_find_repo_path_raises_error(tmp_path: Path):
 
     with pytest.raises(RepoNotFoundError):
         utils.find_repo_path()
+
+
+def test_is_path_absolute():
+    paths = [
+        ("/home/user/file", True),
+        ("C:/home/user/file", True),
+        ("./home/user/file", False),
+        ("home/user/file", False)
+    ]
+    for path, expected in paths:
+        assert utils.is_path_absolute(path) is expected, \
+            f"Path '{path}' was not identified as \
+            {'absolute' if expected else 'relative'}."

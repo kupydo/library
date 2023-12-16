@@ -11,7 +11,7 @@
 from __future__ import annotations
 import re
 import string
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from pydantic import field_validator, model_validator
 from kupydo.internal import utils
 from .base_config import *
@@ -38,9 +38,8 @@ class DeploymentPublicData(DeploymentBaseData):
 	@field_validator("path", mode="before")
 	@classmethod
 	def validate_path(cls, v: str) -> str:
-		for path_cls in [PurePosixPath, PureWindowsPath]:
-			assert not path_cls(v).is_absolute(), \
-				"path must be a relative path."
+		assert not utils.is_path_absolute(v), \
+			"path must be a relative path."
 		path = utils.repo_rel_to_abs_path(v)
 		assert path.is_file(), \
 			"path cannot point to a non-existent file."

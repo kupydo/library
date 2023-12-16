@@ -10,9 +10,10 @@
 #
 import base64
 import functools
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from kupydo.internal import errors
-from kupydo.internal import utils
+from .trace_utils import first_external_caller
+from .path_utils import is_path_absolute
 
 
 __all__ = [
@@ -22,11 +23,10 @@ __all__ = [
 
 
 def read_encode_rel_file(rel_fp: str) -> str:
-    for path_cls in [PurePosixPath, PureWindowsPath]:
-        if path_cls(rel_fp).is_absolute():
-            raise errors.PathNotRelativeError(rel_fp)
+    if is_path_absolute(rel_fp):
+        raise errors.PathNotRelativeError(rel_fp)
 
-    caller_path = utils.first_external_caller()[0]
+    caller_path = first_external_caller()[0]
     target = (caller_path.parent / rel_fp).resolve()
 
     with target.open('rb') as file:
