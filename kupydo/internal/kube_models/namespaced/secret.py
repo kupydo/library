@@ -86,8 +86,8 @@ class BaseSecret(KupydoNamespacedModel):
 
     @staticmethod
     def _resolve_secret(keyword: str, value: str, from_file: bool = False) -> str:
-        if sid := sec_ops.unwrap_enc_tag(value):  # check if value is sid
-            secret = GlobalRegistry.get_secret(sid)
+        if enc_tag := sec_ops.unwrap_enc_tag(value):  # check if value is enc_tag
+            secret = GlobalRegistry.get_secret(enc_tag)
             return secret.secret_value
 
         file_path, from_line = utils.first_external_caller()
@@ -97,12 +97,13 @@ class BaseSecret(KupydoNamespacedModel):
 
         if GlobalRegistry.is_enabled():
             sfd = sec_ops.SecretFieldDetails(
+                enc_tag=sec_ops.generate_enc_tag(),
                 file_path=file_path,
                 line_number=lineno,
                 field_keyword=keyword,
                 field_value=value,
                 secret_value=secret,
-                enc_tag=sec_ops.generate_enc_tag()
+                from_file=from_file
             )
             GlobalRegistry.register_secret(sfd)
         return secret

@@ -16,9 +16,10 @@ __all__ = ["SecretFieldDetails"]
 
 
 class SecretFieldDetails(BaseModel):
+    enc_tag: str
     file_path: Path
     line_number: int
     field_keyword: str
     field_value: str
     secret_value: str
-    enc_tag: str
+    from_file: bool
