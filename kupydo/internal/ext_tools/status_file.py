@@ -24,6 +24,8 @@ __all__ = ["StatusFile"]
 
 
 class StatusFile(DotMap):
+	_comment_ = "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!"
+
 	@staticmethod
 	def _file_path() -> Path:
 		return get_bin_path() / 'status.json'
@@ -71,9 +73,16 @@ class StatusFile(DotMap):
 		)
 
 	def write(self) -> None:
-		comment = "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!"
 		with self._file_path().open('wb') as file:
-			file.write(orjson.dumps(
-				dict(comment=comment, tools=self.toDict()),
-				option=orjson.OPT_INDENT_2
-			))
+			file.write(orjson.dumps(dict(
+				comment=self._comment_,
+				tools=self.toDict()
+			), option=orjson.OPT_INDENT_2))
+
+	@classmethod
+	def reset(cls) -> None:
+		with cls._file_path().open('wb') as file:
+			file.write(orjson.dumps(dict(
+				comment=cls._comment_,
+				tools=cls._default().toDict()
+			), option=orjson.OPT_INDENT_2))

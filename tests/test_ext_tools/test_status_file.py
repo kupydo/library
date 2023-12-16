@@ -77,19 +77,19 @@ def test_invalid_age_date():
 
 @pytest.fixture
 def status_file(tmp_path: Path) -> callable:
-    def closure(*, valid=True):
+    def closure(*, valid=True, default=False):
         path = tmp_path / "status.json"
         extra = {} if valid else {"invalid": "invalid"}
         contents = {
             "comment": "THIS FILE IS MANAGED BY KUPYDO. DO NOT EDIT MANUALLY!",
             "tools": {
                 "sops": {
-                    "current_version": "1.2.3",
-                    "last_update": "2021-12-31"
+                    "current_version": "0.0.0" if default else "1.2.3",
+                    "last_update": "2000-01-01" if default else "2021-12-31"
                 },
                 "age": {
-                    "current_version": "4.5.6",
-                    "last_update": "2003-06-09"
+                    "current_version": "0.0.0" if default else "4.5.6",
+                    "last_update": "2000-01-01" if default else "2003-06-09"
                 },
                 **extra
             }
@@ -102,6 +102,7 @@ def status_file(tmp_path: Path) -> callable:
 def test_valid_file_read(mocker, status_file):
     tmp_path = status_file(valid=True)
     mocker.patch(GET_BIN_PATH, return_value=tmp_path)
+
     sf = StatusFile.read()
     assert sf.sops.current_version == '1.2.3'
     assert sf.age.current_version == '4.5.6'
@@ -112,6 +113,7 @@ def test_valid_file_read(mocker, status_file):
 def test_invalid_file_read(mocker, status_file):
     tmp_path = status_file(valid=False)
     mocker.patch(GET_BIN_PATH, return_value=tmp_path)
+
     sf = StatusFile.read()
     assert sf.sops.current_version == '0.0.0'
     assert sf.age.current_version == '0.0.0'
@@ -151,9 +153,40 @@ def test_file_update_with_invalid_tag_format():
 
 
 def test_file_writing(mocker, status_file):
+    tmp_path = status_file(valid=True, default=True)
+    mocker.patch(GET_BIN_PATH, return_value=tmp_path)
+
+    sf = StatusFile.read()
+    assert sf.sops.current_version == '0.0.0'
+    assert sf.age.current_version == '0.0.0'
+    assert sf.sops.last_update == '2000-01-01'
+    assert sf.age.last_update == '2000-01-01'
+
+    dummy_sops_release = DotMap(
+        tool=DotMap(name="sops"),
+        tag="1.2.3"
+    )
+    dummy_age_release = DotMap(
+        tool=DotMap(name="age"),
+        tag="4.5.6"
+    )
+    sf.update(dummy_sops_release)
+    sf.update(dummy_age_release)
+    sf.write()
+
+    sf = StatusFile.read()
+    assert sf.sops.current_version == '1.2.3'
+    assert sf.age.current_version == '4.5.6'
+    assert sf.sops.last_update != '2000-01-01'
+    assert sf.age.last_update != '2000-01-01'
+
+
+def test_file_resetting(mocker, status_file):
     tmp_path = status_file(valid=True)
     mocker.patch(GET_BIN_PATH, return_value=tmp_path)
-    StatusFile._default().write()
+
+    StatusFile.reset()
+
     sf = StatusFile.read()
     assert sf.sops.current_version == '0.0.0'
     assert sf.age.current_version == '0.0.0'
