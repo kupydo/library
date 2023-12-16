@@ -9,7 +9,8 @@
 #   SPDX-License-Identifier: MIT
 #
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from kupydo.internal import utils
 
 
 __all__ = ["SecretFieldDetails"]
@@ -23,3 +24,10 @@ class SecretFieldDetails(BaseModel):
     field_value: str
     secret_value: str
     from_file: bool
+
+    @field_validator("file_path", mode="before")
+    @classmethod
+    def convert_file_path(cls, v: str) -> Path:
+        if not utils.is_path_absolute(v):
+            return utils.repo_rel_to_abs_path(v)
+        return Path(v)

@@ -70,4 +70,6 @@ def write_secret_store_files(enc_dir: Path, sfd_list: list[SecretFieldDetails]) 
         secret_file.touch(exist_ok=True)
 
         with secret_file.open('wb') as file:
-            file.write(orjson.dumps(obj))
+            file.write(orjson.dumps(
+                obj, option=orjson.OPT_INDENT_2
+            ))
